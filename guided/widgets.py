@@ -31,6 +31,41 @@ MARKS: List[Tuple[str, str, str]] = [
 ]
 
 
+_STEP = {"n": 0, "total": 0}
+
+
+def set_step(n: int, total: int) -> None:
+    """Called by the wizard so every guided screen can show GUIDED n/total."""
+    _STEP["n"], _STEP["total"] = n, total
+
+
+def _step_text() -> str:
+    if _STEP["total"]:
+        return "GUIDED TEST %d OF %d" % (_STEP["n"], _STEP["total"])
+    return ""
+
+
+def brand_bar(top: tk.Misc, title: str, on_close: Optional[Callable[[], None]] = None) -> tk.Frame:
+    """The thin app-chrome bar every guided surface shares, so the tests look
+    like screens of one application instead of foreign pop-ups."""
+    bar = tk.Frame(top, bg="#0b0e13")
+    bar.pack(fill="x", side="top")
+    tk.Label(bar, text="LAPTOP CHECK PRO", bg="#0b0e13", fg="#6b7688",
+             font=("Segoe UI", 9, "bold")).pack(side="left", padx=18, pady=(7, 0))
+    st = _step_text()
+    if st:
+        tk.Label(bar, text=st, bg="#0b0e13", fg="#2f6feb",
+                 font=("Segoe UI", 9, "bold")).pack(side="left", padx=(10, 0), pady=(7, 0))
+    tk.Label(bar, text=title, bg="#0b0e13", fg="#93a0b4",
+             font=("Segoe UI", 9)).pack(side="left", padx=(14, 0), pady=(7, 0))
+    if on_close is not None:
+        tk.Button(bar, text="\u2715", bg="#0b0e13", fg="#93a0b4", relief="flat",
+                  activebackground="#1e2430", activeforeground="#e8edf5",
+                  font=("Segoe UI", 10, "bold"), cursor="hand2",
+                  command=on_close).pack(side="right", padx=10, pady=2)
+    return bar
+
+
 class GuidedDialog:
     """Modal dialog. result = {'mark','note','cancelled','extra'}"""
 
@@ -46,19 +81,28 @@ class GuidedDialog:
         self.body_builder = body_builder
 
         self.top = tk.Toplevel(master)
-        self.top.title(title)
         self.top.configure(bg=COLOURS["bg"])
-        self.top.transient(master.winfo_toplevel() if hasattr(master, "winfo_toplevel") else master)
-        self.top.resizable(True, True)
-        w = width
-        sw = self.top.winfo_screenwidth()
-        sh = self.top.winfo_screenheight()
-        w = min(w, sw - 40)
-        h = min(680, sh - 60)
-        self.top.geometry("%dx%d" % (w, h))
-        self.top.minsize(640, 520)
+        # one application, one look: every guided test is a full-screen
+        # borderless screen of the app, never a foreign pop-up window
+        self.top.overrideredirect(True)
+        self.top.update_idletasks()
+        from app.core import screen_size
+        sw, sh = screen_size()
+        if not sw:
+            sw = self.top.winfo_screenwidth()
+            sh = self.top.winfo_screenheight()
+        self.top.geometry("%dx%d+0+0" % (sw, sh))
+        try:
+            self.top.attributes("-topmost", True)
+        except Exception:
+            pass
+        w = min(width, sw - 120)
+        brand_bar(self.top, title, on_close=self._cancel)
+        host = tk.Frame(self.top, bg=COLOURS["bg"])
+        host.pack(fill="both", expand=True,
+                  padx=max(24, (sw - min(1180, sw - 60)) // 2), pady=(10, 18))
 
-        head = tk.Frame(self.top, bg=COLOURS["panel2"])
+        head = tk.Frame(host, bg=COLOURS["panel2"])
         head.pack(fill="x")
         tk.Label(head, text=title, bg=COLOURS["panel2"], fg=COLOURS["text"],
                  font=("Segoe UI", 16, "bold"), anchor="w").pack(fill="x", padx=18, pady=(14, 0))
@@ -66,7 +110,7 @@ class GuidedDialog:
             tk.Label(head, text=subtitle, bg=COLOURS["panel2"], fg=COLOURS["accent"],
                      font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x", padx=18)
 
-        body = tk.Frame(self.top, bg=COLOURS["bg"])
+        body = tk.Frame(host, bg=COLOURS["bg"])
         body.pack(fill="both", expand=True, padx=18, pady=12)
 
         if instructions:
@@ -93,7 +137,7 @@ class GuidedDialog:
         self.status.pack(fill="x", pady=(4, 4))
 
         # ---- mark row ----------------------------------------------------
-        markrow = tk.Frame(self.top, bg=COLOURS["panel"])
+        markrow = tk.Frame(host, bg=COLOURS["panel"])
         markrow.pack(fill="x", side="bottom")
         inner = tk.Frame(markrow, bg=COLOURS["panel"])
         inner.pack(fill="x", padx=14, pady=10)
@@ -124,13 +168,8 @@ class GuidedDialog:
 
     # ------------------------------------------------------------------ ui
     def _centre(self) -> None:
+        # full-screen surface: nothing to centre, just take the keyboard
         try:
-            self.top.update_idletasks()
-            mw = self.master.winfo_rootx() + self.master.winfo_width() // 2
-            mh = self.master.winfo_rooty() + self.master.winfo_height() // 2
-            w = self.top.winfo_width()
-            h = self.top.winfo_height()
-            self.top.geometry("+%d+%d" % (max(0, mw - w // 2), max(0, mh - h // 2)))
             self.top.focus_force()
         except Exception:
             pass
@@ -215,27 +254,45 @@ def checklist_dialog(master: tk.Misc, title: str, subtitle: str,
     result: Dict[str, Any] = {"answers": answers, "note": "", "cancelled": True, "mark": None}
 
     top = tk.Toplevel(master)
-    top.title(title)
     top.configure(bg=COLOURS["bg"])
-    sw = top.winfo_screenwidth()
-    sh = top.winfo_screenheight()
-    top.geometry("%dx%d" % (min(width, sw - 40), min(700, sh - 60)))
-    top.minsize(680, 520)
+    top.overrideredirect(True)
+    top.update_idletasks()
+    from app.core import screen_size
+    sw, sh = screen_size()
+    if not sw:
+        sw = top.winfo_screenwidth()
+        sh = top.winfo_screenheight()
+    top.geometry("%dx%d+0+0" % (sw, sh))
+    try:
+        top.attributes("-topmost", True)
+    except Exception:
+        pass
+    brand_bar(top, title, on_close=lambda: top.destroy())
+    host = tk.Frame(top, bg=COLOURS["bg"])
+    host.pack(fill="both", expand=True,
+              padx=max(24, (sw - min(1180, sw - 60)) // 2), pady=(10, 18))
 
-    head = tk.Frame(top, bg=COLOURS["panel2"])
+    head = tk.Frame(host, bg=COLOURS["panel2"])
     head.pack(fill="x")
     tk.Label(head, text=title, bg=COLOURS["panel2"], fg=COLOURS["text"],
              font=("Segoe UI", 16, "bold"), anchor="w").pack(fill="x", padx=18, pady=(14, 0))
     tk.Label(head, text=subtitle, bg=COLOURS["panel2"], fg=COLOURS["accent"],
              font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x", padx=18, pady=(0, 10))
 
-    wrap = tk.Frame(top, bg=COLOURS["bg"])
+    wrap = tk.Frame(host, bg=COLOURS["bg"])
     wrap.pack(fill="both", expand=True, padx=10, pady=10)
     canvas = tk.Canvas(wrap, bg=COLOURS["bg"], highlightthickness=0)
     sb = ttk.Scrollbar(wrap, orient="vertical", command=canvas.yview)
     inner = tk.Frame(canvas, bg=COLOURS["bg"])
     inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-    canvas.create_window((0, 0), window=inner, anchor="nw")
+    win_id = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+    def _stretch(event: Any) -> None:
+        try:
+            canvas.itemconfigure(win_id, width=event.width)
+        except Exception:
+            pass
+    canvas.bind("<Configure>", _stretch)
     canvas.configure(yscrollcommand=sb.set)
     canvas.pack(side="left", fill="both", expand=True)
     sb.pack(side="right", fill="y")

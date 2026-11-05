@@ -47,6 +47,22 @@ jobs:
       - name: Build the single-file exe
         run: python -m PyInstaller LaptopCheckPro.spec --noconfirm --clean
 
+      - name: Code-sign the exe (only when a certificate secret is configured)
+        # Unsigned exes trigger SmartScreen "unknown publisher". Add repository
+        # secrets SIGN_PFX_BASE64 (base64 of a code-signing .pfx) and SIGN_PFX_PASS
+        # and every release is signed automatically - see docs/signing.md.
+        if: ${{ secrets.SIGN_PFX_BASE64 != '' }}
+        shell: pwsh
+        run: |
+          [IO.File]::WriteAllBytes("sign.pfx", [Convert]::FromBase64String("${{ secrets.SIGN_PFX_BASE64 }}"))
+          choco install -y osslsigncode --no-progress | Out-Null
+          osslsigncode sign -pkcs12 sign.pfx -pass "${{ secrets.SIGN_PFX_PASS }}" `
+            -n "Laptop Check Pro" -i "https://github.com/cid0980/Laptop-check" `
+            -t http://timestamp.sectigo.com `
+            -in dist\LaptopCheckPro.exe -out dist\LaptopCheckPro-signed.exe
+          Move-Item -Force dist\LaptopCheckPro-signed.exe dist\LaptopCheckPro.exe
+          Remove-Item sign.pfx
+
       - name: Sanity-check the built exe (headless, no GUI)
         shell: pwsh
         run: |

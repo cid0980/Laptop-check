@@ -145,10 +145,37 @@ def ensure_bt() -> str:
     return ""
 
 
+def ensure_bluetooth() -> str:
+    """Turn a disabled Bluetooth radio back on ourselves (admin), so the test
+    measures hardware instead of a switch somebody left off."""
+    if not IS_WINDOWS:
+        return ""
+    ps = ("Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue | "
+          "Where-Object { $_.Problem -eq 22 -or $_.Status -eq 'Disabled' } | "
+          "Select-Object -ExpandProperty InstanceId")
+    rc, out, _err = run_ps(ps, timeout=40)
+    ids = [l.strip() for l in (out or "").splitlines() if l.strip()]
+    if not ids:
+        return ""
+    done = 0
+    for iid in ids[:6]:
+        rc2, _o, e2 = run_ps("Enable-PnpDevice -InstanceId '%s' -Confirm:$false -ErrorAction SilentlyContinue"
+                            % iid.replace("'", "''"), timeout=40)
+        if rc2 == 0:
+            done += 1
+        else:
+            diag("fixes: Enable-PnpDevice %s failed: %s" % (iid, (e2 or "")[:120]))
+    if done:
+        diag("fixes: enabled %d disabled Bluetooth device(s)" % done)
+        return ("The Bluetooth radio was switched off in Windows. The tool turned it back "
+                "on (%d device(s)) so Bluetooth could really be tested." % done)
+    return ""
+
+
 def run_all_pre_fixes() -> List[str]:
     """Everything sensible before the automatic checks evaluate hardware."""
     notes: List[str] = []
-    for fn in (ensure_audio, ensure_wlan, enable_wifi_adapter, ensure_bt):
+    for fn in (ensure_audio, ensure_wlan, enable_wifi_adapter, ensure_bt, ensure_bluetooth):
         try:
             note = fn()
             if note:

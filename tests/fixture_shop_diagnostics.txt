@@ -1,0 +1,6 @@
+2026-11-06 01:43:30  pdf: wrote C:\Users\Cid\Downloads\Software\LCP_Data\reports\LCP-261106-5D6F8A_20261106-014326_report.pdf (415810 bytes) via msedge.exe
+2026-11-06 02:26:51  fixes: privacy consent microphone changed on 2 key(s)
+2026-11-06 02:27:14  fixes: privacy consent webcam changed on 2 key(s)
+2026-11-06 02:28:29  pdf: wrote C:\Users\Cid\Downloads\Software\LCP_Data\reports\LCP-261106-333059_20261106-022824_report.pdf (402516 bytes) via msedge.exe
+2026-11-06 02:28:33  pdf: wrote C:\Users\Cid\Downloads\Software\LCP_Data\reports\LCP-261106-333059_20261106-022824_customer_customer.pdf (306128 bytes) via msedge.exe
+2026-11-06 02:28:47  exception in debug.bundle: [Errno 22] Invalid argument: 'C:\\Users\\Cid\\Downloads\\Software\\LCP_Data\\LCP_debug_2026-11-06 02:28:31.zip'

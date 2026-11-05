@@ -21,6 +21,7 @@ from __future__ import annotations
 import os
 import shutil
 import threading
+import ctypes
 import time
 import tkinter as tk
 from tkinter import filedialog
@@ -170,6 +171,83 @@ def wait_for_change(master: tk.Misc, kind: str, prompt: str,
 # TOUCHPAD
 # ==========================================================================
 
+class _POINT(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+
+def measure_pointer(master: tk.Misc, seconds: float = 12.0) -> Dict[str, Any]:
+    """Objective touchpad proof: travel distance + real button presses,
+    measured while the technician wiggles and clicks on a full-screen pad."""
+    out: Dict[str, Any] = {"travel": 0, "left": 0, "right": 0, "ok": False}
+    if not IS_WINDOWS:
+        return out
+    try:
+        user32 = ctypes.windll.user32
+        user32.GetCursorPos.argtypes = [ctypes.POINTER(_POINT)]
+        user32.GetCursorPos.restype = ctypes.c_int
+        user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
+        user32.GetAsyncKeyState.restype = ctypes.c_short
+    except Exception:
+        return out
+    top = tk.Toplevel(master)
+    top.configure(bg="#0f1218")
+    top.overrideredirect(True)
+    top.update_idletasks()
+    from app.core import screen_size
+    sw, sh = screen_size()
+    if not sw:
+        sw, sh = top.winfo_screenwidth(), top.winfo_screenheight()
+    top.geometry("%dx%d+0+0" % (sw, sh))
+    try:
+        top.attributes("-topmost", True)
+    except Exception:
+        pass
+    from guided.widgets import brand_bar
+    brand_bar(top, "Touchpad measurement")
+    tk.Label(top, text="MOVE YOUR FINGER ALL OVER THE PAD\nand press LEFT and RIGHT click a few times",
+             bg="#0f1218", fg="#e8edf5", font=("Segoe UI", 22, "bold"),
+             justify="center").pack(expand=True)
+    bar = tk.Label(top, text="", bg="#0f1218", fg="#2f6feb", font=("Segoe UI", 14, "bold"))
+    bar.pack(pady=(0, 60))
+    state = {"last": _POINT(), "l": False, "r": False, "t0": time.time()}
+    user32.GetCursorPos(ctypes.byref(state["last"]))
+
+    def tick() -> None:
+        try:
+            p = _POINT()
+            user32.GetCursorPos(ctypes.byref(p))
+            out["travel"] += int(((p.x - state["last"].x) ** 2 +
+                                  (p.y - state["last"].y) ** 2) ** 0.5)
+            state["last"] = p
+            ld = bool(user32.GetAsyncKeyState(0x01) & 0x8000)
+            rd = bool(user32.GetAsyncKeyState(0x02) & 0x8000)
+            if ld and not state["l"]:
+                out["left"] += 1
+            if rd and not state["r"]:
+                out["right"] += 1
+            state["l"], state["r"] = ld, rd
+            left = seconds - (time.time() - state["t0"])
+            bar.configure(text="measuring... %ds   travel %d px   L %d   R %d"
+                          % (max(0, int(left)), out["travel"], out["left"], out["right"]))
+            if left <= 0:
+                out["ok"] = True
+                top.destroy()
+                return
+            top.after(50, tick)
+        except Exception:
+            out["ok"] = True
+            try:
+                top.destroy()
+            except Exception:
+                pass
+    top.after(120, tick)
+    try:
+        master.wait_window(top)
+    except Exception:
+        pass
+    return out
+
+
 def run_touchpad_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                       emit: Optional[Callable[[str], None]] = None) -> CheckResult:
     inp = ctx.get("input") or {}
@@ -184,6 +262,18 @@ def run_touchpad_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
     res.metric("Pointing devices", ", ".join(pads)[:120])
     if ext_mice:
         res.metric("External mice connected", ", ".join(ext_mice)[:120])
+    meas = measure_pointer(master)
+    if meas.get("ok"):
+        res.metric("Measured pointer travel", "%d px" % meas["travel"])
+        res.metric("Measured button presses", "left %d / right %d"
+                   % (meas["left"], meas["right"]))
+        if meas["travel"] < 800:
+            res.flag("Pointer barely moved during the measured pass (%d px) - the pad may "
+                     "not track across its whole surface" % meas["travel"], "warn")
+        if meas["left"] < 1:
+            res.flag("No LEFT click registered during the measured pass", "warn")
+        if meas["right"] < 1:
+            res.flag("No RIGHT click registered during the measured pass", "warn")
 
     items = [
         {"id": "move", "label": "Pointer MOVES smoothly",

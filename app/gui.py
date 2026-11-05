@@ -477,6 +477,11 @@ class Wizard:
             self.show_finish()
             return
         cid = GUIDED_IDS[self._guided_index]
+        try:
+            from guided.widgets import set_step
+            set_step(self._guided_index + 1, len(GUIDED_IDS))
+        except Exception:
+            pass
         # display line items 2 and 3 come free with the colour test
         if cid in ("screen_pixels", "screen_text") and \
                 self.scan.status_of("screen_colours") not in ("missing", "skipped", "unknown"):

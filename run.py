@@ -81,9 +81,29 @@ def cmd_camera_capture(path: str, index: int, seconds: float) -> int:
 
 
 def cmd_camera_live(folder: str, seconds: float, fps: float, index: int) -> int:
-    from app.dshow import live_frames
-    status = live_frames(folder, seconds=seconds, fps=fps, index=index)
-    return 0 if status.get("ok") else 2
+    # 1) WinRT MediaCapture - the same stack the Windows Camera app uses
+    # 2) DirectShow graph - old-school fallback for ancient webcams
+    from app import camrt
+    status = camrt.live_frames(folder, seconds=seconds, fps=fps, index=index)
+    if status.get("ok"):
+        return 0
+    err_rt = status.get("error") or "winrt failed"
+    try:
+        from app.dshow import live_frames as ds_frames
+        status = ds_frames(folder, seconds=seconds, fps=fps, index=index)
+    except Exception as exc:
+        status = {"ok": False, "error": "%s: %s" % (type(exc).__name__, exc)}
+    if status.get("ok"):
+        return 0
+    err_ds = status.get("error") or "directshow failed"
+    try:
+        import json as _json
+        with open(os.path.join(folder, "status.json"), "w", encoding="utf-8") as fh:
+            _json.dump({"ok": False, "frames": 0,
+                        "error": "WinRT: %s || DirectShow: %s" % (err_rt[:300], err_ds[:300])}, fh)
+    except Exception:
+        pass
+    return 2
 
 
 def cmd_selftest(outdir: str = "") -> int:

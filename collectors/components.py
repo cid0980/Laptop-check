@@ -1546,6 +1546,32 @@ def check_events(res: CheckResult, ctx: Dict[str, Any]) -> None:
 # registry
 # ==========================================================================
 
+@safe_check
+def check_biometric(res: CheckResult, ctx: Dict[str, Any]) -> None:
+    """Fingerprint reader / IR face camera: present, and healthy?"""
+    bio = _rows(ctx, "fingerprint")
+    face = [c for c in _rows(ctx, "camera")
+            if "ir" in _s(get(c, "FriendlyName")).lower()
+            or "face" in _s(get(c, "FriendlyName")).lower()
+            or "ir" in _s(get(c, "InstanceId")).lower()]
+    if not bio and not face:
+        res.na("No fingerprint reader or IR face camera fitted")
+        return
+    score = 100.0
+    for i, b in enumerate((bio + face)[:6], 1):
+        nm = _s(get(b, "FriendlyName")) or _s(get(b, "Name"))
+        st = _s(get(b, "Status")) or "OK"
+        res.metric("Biometric device %d" % i, "%s - %s" % (nm, st))
+        if st.lower() not in ("ok", ""):
+            score -= 30
+            res.flag("Biometric device '%s' reports a problem (%s)" % (nm, st), "warn")
+    res.set("pass" if score >= 85 else "warn",
+            "%d biometric device(s) present and healthy" % min(6, len(bio) + len(face)),
+            score=score)
+    res.note("Windows Hello sign-in is a selling point: enrol a fingerprint before the "
+             "buyer sees the machine, or wipe the old enrolments.")
+
+
 REGISTRY: Dict[str, Any] = {
     "identity": check_identity,
     "os_license": check_os_license,
@@ -1564,5 +1590,6 @@ REGISTRY: Dict[str, Any] = {
     "camera_dev": check_camera_dev,
     "ports": check_ports,
     "input_dev": check_input_dev,
+    "biometric": check_biometric,
     "events": check_events,
 }

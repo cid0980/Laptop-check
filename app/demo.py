@@ -198,6 +198,8 @@ def build_demo_scan(scan_id: str = "LCP-DEMO-0001") -> Scan:
         "Serial / COM / LPT ports": 0, "Optical drive (DVD/CD)": "No",
         "SD / card reader": "Yes - Realtek PCIE CardReader", "Fingerprint reader": "No",
         "Video output": "HDMI"}, seconds=2.0)
+    R["biometric"] = _r("biometric", "pass", "1 biometric device(s) present and healthy", 100, {
+        "Biometric device 1": "Synaptics WBDI - SGX - OK"})
     R["input_dev"] = _r("input_dev", "pass", "1 keyboard device(s), 1 pointing device(s)", 100, {
         "Keyboard": "Standard PS/2 Keyboard [internal] OK", "Instance": "ACPI\\PNP0303\\4&DEMO",
         "Built-in keyboard detected": "Yes", "Touchpad": "DELL0873 Precision Touchpad",

@@ -6,6 +6,36 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.3.0]
+### Guided tests now look and behave like one application
+- Every guided test is a full-screen borderless screen of the app with the
+  shared brand bar ("LAPTOP CHECK PRO - GUIDED TEST n OF 12"), no foreign
+  pop-up windows with title bars anymore.
+- Display test: the control panel now ALWAYS auto-hides after ~3 s (it used to
+  stay parked over the bottom of the screen once the mouse moved, hiding the
+  very strip you inspect for dead pixels). Move the mouse to bring it back.
+### Camera that works where the Windows Camera app works
+- Capture child now tries WinRT MediaCapture first (the exact stack the
+  Windows Camera app uses), DirectShow second; both errors are recorded into
+  status.json and diagnostics so the next debug bundle pinpoints any blocker.
+### The tool turns hardware ON instead of skipping it
+- Disabled Bluetooth radios are re-enabled by the tool (Enable-PnpDevice),
+  Bluetooth Support service started, before Bluetooth is judged.
+- Speaker test sets the playback stream volume to 100% itself first.
+### Stronger proofs
+- Touchpad: a 12 s measured pass records real pointer travel and left/right
+  press counts before the checklist; low travel or missing clicks are flagged.
+- Microphone: new SPEAKER->MIC LOOPBACK button plays 1 kHz through the
+  speakers while recording; a >6 dB jump proves speakers AND mic in one go.
+### New check
+- Biometric sensor (fingerprint reader / IR face camera): present + healthy.
+  Automatic checks are now 21, total 33.
+### Looks genuine
+- Exe carries full Windows file properties (product, company, copyright,
+  version) via a generated version resource; icon + UAC shield retained.
+- Optional CI code-signing: add SIGN_PFX_BASE64 / SIGN_PFX_PASS secrets and
+  every release exe is signed (see docs/signing.md for the SmartScreen story).
+
 ## [1.2.1]
 ### Fixed - from the shop PC's own probe file (first real debug iteration)
 - Service verdicts: Get-Service returns enum INTEGERS in JSON (4 = Running); the

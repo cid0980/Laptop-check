@@ -245,22 +245,20 @@ class ScreenTest:
         self.hide_job = None
 
     def _show_panel(self, event: Any = None) -> None:
-        if event is not None:
-            # ignore the synthetic motion events that placing the panel causes
-            pass
         if not self.panel_visible:
             self._place_panel()
             try:
                 self.top.configure(cursor="")
             except Exception:
                 pass
-        else:
-            if self.hide_job:
-                try:
-                    self.top.after_cancel(self.hide_job)
-                except Exception:
-                    pass
-            self.hide_job = self.top.after(6000, self._hide_panel)
+        if self.hide_job:
+            try:
+                self.top.after_cancel(self.hide_job)
+            except Exception:
+                pass
+        # ALWAYS schedule the hide: the panel must never stay parked over the
+        # bottom of the screen - dead pixels hide underneath it otherwise.
+        self.hide_job = self.top.after(3200, self._hide_panel)
 
     # --------------------------------------------------------------- screens
     def _clear(self) -> None:

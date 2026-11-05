@@ -1,0 +1,1524 @@
+{
+  "cs": [
+    {
+      "Manufacturer": "LENOVO",
+      "Model": "20K3S1B100",
+      "SystemFamily": "ThinkPad X1C 5th W10DG",
+      "SystemSKUNumber": "LENOVO_MT_20K3_BU_Think_FM_ThinkPad X1C 5th W10DG",
+      "TotalPhysicalMemory": 8421834752,
+      "NumberOfLogicalProcessors": 4,
+      "PCSystemType": 2,
+      "PCSystemTypeEx": 2,
+      "UserName": "DESKTOP-C577VEP\\Cid",
+      "Domain": "WORKGROUP"
+    }
+  ],
+  "csp": [
+    {
+      "Name": "20K3S1B100",
+      "Vendor": "LENOVO",
+      "Version": "ThinkPad X1C 5th W10DG",
+      "IdentifyingNumber": "PF11Y309",
+      "UUID": "1D5D9E4C-2C29-11B2-A85C-EE326C1F1E5B"
+    }
+  ],
+  "bios": [
+    {
+      "Manufacturer": "LENOVO",
+      "SMBIOSBIOSVersion": "N1MET77W (1.62 )",
+      "SMBIOSMajorVersion": 3,
+      "SMBIOSMinorVersion": 0,
+      "ReleaseDate": "/Date(1707955200000)/",
+      "SerialNumber": "PF11Y309",
+      "Name": "N1MET77W (1.62 )",
+      "Version": "LENOVO - 1620"
+    }
+  ],
+  "board": [
+    {
+      "Manufacturer": "LENOVO",
+      "Product": "20K3S1B100",
+      "SerialNumber": "L3HF7CE006A",
+      "Version": "SDK0J40697 WIN"
+    }
+  ],
+  "enclosure": [
+    {
+      "ChassisTypes": [
+        10
+      ],
+      "SerialNumber": "PF11Y309",
+      "Manufacturer": "LENOVO",
+      "Version": "None"
+    }
+  ],
+  "os": [
+    {
+      "Caption": "Microsoft Windows 11 Pro",
+      "Version": "10.0.26300",
+      "BuildNumber": "26300",
+      "OSArchitecture": "64-bit",
+      "InstallDate": "/Date(1793047540000)/",
+      "LastBootUpTime": "/Date(1793911787500)/",
+      "TotalVisibleMemorySize": 8224448,
+      "FreePhysicalMemory": 3804348,
+      "ProductType": 1,
+      "RegisteredUser": "Cid",
+      "Organization": null,
+      "Locale": "0409"
+    }
+  ],
+  "license": [
+    {
+      "Name": "Windows(R), Professional edition",
+      "LicenseStatus": 1,
+      "Description": "Windows(R) Operating System, RETAIL channel",
+      "PartialProductKey": "3V66T",
+      "ApplicationID": "55c92734-d682-4d71-983e-d6ec3f16059f"
+    }
+  ],
+  "slmgr": [
+    {
+      "OA3xOriginalProductKey": "RY7KP-RNMW9-K6JPB-MGP72-DDBP2",
+      "OA3xOriginalProductKeyReserved": null,
+      "ClientMachineID": "",
+      "RemainingWindowsReArmCount": 1001
+    }
+  ],
+  "cpu": [
+    {
+      "Name": "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
+      "NumberOfCores": 2,
+      "NumberOfLogicalProcessors": 4,
+      "MaxClockSpeed": 2496,
+      "CurrentClockSpeed": 2396,
+      "L2CacheSize": 512,
+      "L3CacheSize": 3072,
+      "Manufacturer": "GenuineIntel",
+      "ProcessorId": "BFEBFBFF000406E3",
+      "VirtualizationFirmwareEnabled": false,
+      "SecondLevelAddressTranslationExtensions": true,
+      "LoadPercentage": 2,
+      "Description": "Intel64 Family 6 Model 78 Stepping 3",
+      "Family": 205
+    }
+  ],
+  "thermal": [
+    {
+      "InstanceName": "ACPI\\ThermalZone\\THM0_0",
+      "CurrentTemperature": 3272
+    }
+  ],
+  "ram": [
+    {
+      "BankLabel": "BANK 0",
+      "DeviceLocator": "ChannelA-DIMM0",
+      "Capacity": 4294967296,
+      "Speed": 1867,
+      "ConfiguredClockSpeed": 1867,
+      "ConfiguredVoltage": 1200,
+      "Manufacturer": "Samsung",
+      "PartNumber": "K4E6E304EB-EGCF   ",
+      "SerialNumber": "00000000",
+      "SMBIOSMemoryType": 29,
+      "FormFactor": 0,
+      "DataWidth": 64,
+      "TotalWidth": 64
+    },
+    {
+      "BankLabel": "BANK 2",
+      "DeviceLocator": "ChannelB-DIMM0",
+      "Capacity": 4294967296,
+      "Speed": 1867,
+      "ConfiguredClockSpeed": 1867,
+      "ConfiguredVoltage": 1200,
+      "Manufacturer": "Samsung",
+      "PartNumber": "K4E6E304EB-EGCF   ",
+      "SerialNumber": "00000000",
+      "SMBIOSMemoryType": 29,
+      "FormFactor": 0,
+      "DataWidth": 64,
+      "TotalWidth": 64
+    }
+  ],
+  "ramarray": [
+    {
+      "MemoryDevices": 2,
+      "MaxCapacity": 8388608,
+      "MaxCapacityEx": 8388608,
+      "Use": 3
+    }
+  ],
+  "disks": [
+    {
+      "DeviceId": "0",
+      "FriendlyName": "SAMSUNG MZVLW256HEHP-000L7",
+      "MediaType": "SSD",
+      "BusType": "NVMe",
+      "HealthStatus": "Healthy",
+      "OperationalStatus": "OK",
+      "Size": 256060514304,
+      "SpindleSpeed": 0,
+      "SerialNumber": "0025_38B7_71BB_586A.",
+      "Model": "SAMSUNG MZVLW256HEHP-000L7",
+      "AdapterRate": null,
+      "IsBoot": null,
+      "IsSystem": null,
+      "DeviceType": null,
+      "UniqueId": "eui.002538B771BB586A"
+    }
+  ],
+  "reliability": [
+    {
+      "DeviceId": "0",
+      "FriendlyName": "SAMSUNG MZVLW256HEHP-000L7",
+      "Wear": 0,
+      "Temperature": 42,
+      "TemperatureMax": 69,
+      "PowerOnHours": null,
+      "StartStopCycleCount": null,
+      "ReadErrorsTotal": null,
+      "ReadErrorsUncorrected": null,
+      "WriteErrorsTotal": null,
+      "WriteErrorsUncorrected": null,
+      "ManufactureDate": null
+    }
+  ],
+  "volumes": [
+    {
+      "DriveLetter": "C",
+      "FileSystemLabel": "",
+      "FileSystemType": "NTFS",
+      "Size": 63471349760,
+      "SizeRemaining": 24110510080,
+      "HealthStatus": "Healthy",
+      "OperationalStatus": "OK",
+      "DriveType": "Fixed"
+    },
+    {
+      "DriveLetter": null,
+      "FileSystemLabel": "",
+      "FileSystemType": "NTFS",
+      "Size": 935325696,
+      "SizeRemaining": 94887936,
+      "HealthStatus": "Healthy",
+      "OperationalStatus": "OK",
+      "DriveType": "Fixed"
+    },
+    {
+      "DriveLetter": null,
+      "FileSystemLabel": "",
+      "FileSystemType": "FAT32",
+      "Size": 535805952,
+      "SizeRemaining": 495910912,
+      "HealthStatus": "Healthy",
+      "OperationalStatus": "OK",
+      "DriveType": "Fixed"
+    }
+  ],
+  "partition": [
+    {
+      "DiskNumber": 0,
+      "PartitionNumber": 1,
+      "DriveLetter": null,
+      "Size": 536870912,
+      "Type": "System",
+      "IsBoot": false,
+      "IsSystem": true
+    },
+    {
+      "DiskNumber": 0,
+      "PartitionNumber": 2,
+      "DriveLetter": null,
+      "Size": 191097733120,
+      "Type": "Unknown",
+      "IsBoot": false,
+      "IsSystem": false
+    },
+    {
+      "DiskNumber": 0,
+      "PartitionNumber": 3,
+      "DriveLetter": null,
+      "Size": 16777216,
+      "Type": "Reserved",
+      "IsBoot": false,
+      "IsSystem": false
+    },
+    {
+      "DiskNumber": 0,
+      "PartitionNumber": 4,
+      "DriveLetter": "C",
+      "Size": 63471353856,
+      "Type": "Basic",
+      "IsBoot": true,
+      "IsSystem": false
+    },
+    {
+      "DiskNumber": 0,
+      "PartitionNumber": 5,
+      "DriveLetter": null,
+      "Size": 935329792,
+      "Type": "Recovery",
+      "IsBoot": false,
+      "IsSystem": false
+    }
+  ],
+  "trim": [],
+  "gpu": [
+    {
+      "Name": "Intel(R) HD Graphics 520",
+      "AdapterRAM": 1073741824,
+      "DriverVersion": "31.0.101.2111",
+      "DriverDate": "/Date(1658188800000)/",
+      "VideoProcessor": "Intel(R) HD Graphics Family",
+      "CurrentHorizontalResolution": 1920,
+      "CurrentVerticalResolution": 1080,
+      "CurrentRefreshRate": 60,
+      "CurrentBitsPerPixel": 32,
+      "VideoModeDescription": "1920 x 1080 x 4294967296 colors",
+      "Status": "OK",
+      "PNPDeviceID": "PCI\\VEN_8086&DEV_1916&SUBSYS_224F17AA&REV_07\\3&11583659&0&10",
+      "AdapterCompatibility": "Intel Corporation",
+      "MinRefreshRate": 60,
+      "MaxRefreshRate": 60,
+      "InfFilename": "oem12.inf"
+    }
+  ],
+  "desktopmonitor": [
+    {
+      "Name": "Wide viewing angle & High density FlexView Display 1920x1080",
+      "ScreenWidth": null,
+      "ScreenHeight": null,
+      "Availability": 8,
+      "Status": "OK",
+      "MonitorManufacturer": "Lenovo",
+      "MonitorType": "Wide viewing angle & High density FlexView Display 1920x1080",
+      "PNPDeviceID": "DISPLAY\\LEN40A9\\4&1D5E4D9F&0&UID265988",
+      "ConfigManagerErrorCode": 0
+    }
+  ],
+  "monitorid": [
+    {
+      "InstanceName": "DISPLAY\\LEN40A9\\4&1d5e4d9f&0&UID265988_0",
+      "ManufacturerName": [
+        76,
+        69,
+        78,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ProductCodeID": [
+        52,
+        48,
+        65,
+        57,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "SerialNumberID": [
+        48,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "UserFriendlyName": null,
+      "YearOfManufacture": 2016,
+      "WeekOfManufacture": 0
+    }
+  ],
+  "monitorbasic": [],
+  "monitorconn": [
+    {
+      "InstanceName": "DISPLAY\\LEN40A9\\4&1d5e4d9f&0&UID265988_0",
+      "VideoOutputTechnology": 2147483648
+    }
+  ],
+  "brightness": [
+    {
+      "InstanceName": "DISPLAY\\LEN40A9\\4&1d5e4d9f&0&UID265988_0",
+      "CurrentBrightness": 1,
+      "Levels": 101
+    }
+  ],
+  "edid": [
+    {
+      "Key": "Device Parameters",
+      "Path": "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\DISPLAY\\BOE06DF\\4&1d5e4d9f&0&UID0\\Device Parameters",
+      "EDID": "AP///////wAJ5d8GAAAAAAEaAQSlHxF4AoYxo1ROmyUOUFQAAAABAQEBAQEBAQEBAQEBAQEBPDeA3nA4FEA8IDYANa0QAAAaMCyA3nA4FEAwIDYANa0QAAAaAAAA/gBCT0UgQ1EKICAgICAgAAAA/gBIVjE0MEZITS1ONjEKAEk="
+    },
+    {
+      "Key": "Device Parameters",
+      "Path": "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\DISPLAY\\LEN40A9\\4&1d5e4d9f&0&UID265988\\Device Parameters",
+      "EDID": "AP///////wAwrqlAAAAAAAAaAQSlHxF44oYxo1ROmyUOUFQAAAABAQEBAQEBAQEBAQEBAQEBPDeA3nA4FEA8IDYANa4QAAAaPDeA3nA4FEA8IDYANa4QAAAaAAAADwDRCTzRCTweCgAJ5d8GAAAA/gBIVjE0MEZITS1ONjEKAG0="
+    }
+  ],
+  "videores": [
+    {
+      "Device": "\\\\.\\DISPLAY1",
+      "Primary": true,
+      "W": 1280,
+      "H": 720,
+      "BitsPerPixel": 32
+    }
+  ],
+  "battery": [
+    {
+      "BatteryStatus": 1,
+      "EstimatedChargeRemaining": 4,
+      "DesignVoltage": 9567,
+      "Name": "01AV431",
+      "DeviceID": "  199SMP01AV431",
+      "Chemistry": 2,
+      "ExpectedLife": null,
+      "FullChargeCapacity": null,
+      "SmartBatteryVersion": null,
+      "Status": "OK",
+      "ConfigManagerErrorCode": null
+    }
+  ],
+  "batterystatus": [
+    {
+      "InstanceName": "ACPI\\PNP0C0A\\0_0",
+      "Charging": false,
+      "Discharging": true,
+      "PowerOnline": false,
+      "RemainingCapacity": 2250,
+      "Voltage": 9567,
+      "ChargeRate": 0,
+      "DischargeRate": 14044,
+      "EstimatedTime": null
+    }
+  ],
+  "batteryfull": [
+    {
+      "InstanceName": "ACPI\\PNP0C0A\\0_0",
+      "FullChargedCapacity": 47260
+    }
+  ],
+  "batterystatic": [],
+  "batterycycle": [
+    {
+      "InstanceName": "ACPI\\PNP0C0A\\0_0",
+      "CycleCount": 235
+    }
+  ],
+  "netadapter": [
+    {
+      "Name": "Cellular 9",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 34,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 2",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 33,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 8",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 32,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Ethernet",
+      "InterfaceDescription": "Intel(R) Ethernet Connection I219-LM",
+      "Status": "Disconnected",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "54-E1-AD-F2-A9-4F",
+      "PhysicalMediaType": "802.3",
+      "FullDuplex": null,
+      "InterfaceIndex": 30,
+      "DriverInformation": "Driver Date 2015-08-03 Version 12.19.1.32 NDIS 6.50",
+      "MtuSize": 1500,
+      "AdminStatus": 1,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 10",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 29,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Wi-Fi",
+      "InterfaceDescription": "Intel(R) Dual Band Wireless-AC 8260",
+      "Status": "Up",
+      "LinkSpeed": "72.2 Mbps",
+      "MacAddress": "F4-96-34-0C-A8-41",
+      "PhysicalMediaType": "Native 802.11",
+      "FullDuplex": false,
+      "InterfaceIndex": 28,
+      "DriverInformation": "Driver Date 2022-01-13 Version 20.70.30.1 NDIS 6.60",
+      "MtuSize": 1500,
+      "AdminStatus": 1,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 7",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 26,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 13",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 25,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 5",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 24,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 3",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 23,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Teredo Tunneling Pseudo-Interface",
+      "InterfaceDescription": "",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Unspecified",
+      "FullDuplex": null,
+      "InterfaceIndex": 22,
+      "DriverInformation": "Driver Date  Version ",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": true
+    },
+    {
+      "Name": "Cellular 4",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 21,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 16",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 20,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 11",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 19,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 15",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 18,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Disconnected",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "B6-91-B5-50-5A-5B",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 17,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 1500,
+      "AdminStatus": 1,
+      "Virtual": false
+    },
+    {
+      "Name": "Ethernet (Kernel Debugger)",
+      "InterfaceDescription": "Microsoft Kernel Debug Network Adapter",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "802.3",
+      "FullDuplex": null,
+      "InterfaceIndex": 14,
+      "DriverInformation": "Driver Date 2006-06-21 Version 10.0.26100.8521",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": true
+    },
+    {
+      "Name": "Local Area Connection* 10",
+      "InterfaceDescription": "Microsoft Wi-Fi Direct Virtual Adapter #2",
+      "Status": "Disconnected",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "F6-96-34-0C-A8-41",
+      "PhysicalMediaType": "Native 802.11",
+      "FullDuplex": true,
+      "InterfaceIndex": 13,
+      "DriverInformation": "Driver Date 2006-06-21 Version 10.0.26100.8972 NDIS 6.40",
+      "MtuSize": 1500,
+      "AdminStatus": 1,
+      "Virtual": true
+    },
+    {
+      "Name": "Cellular 17",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 12,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 12",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 10,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Local Area Connection* 1",
+      "InterfaceDescription": "Microsoft Wi-Fi Direct Virtual Adapter",
+      "Status": "Disconnected",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "F4-96-34-0C-A8-42",
+      "PhysicalMediaType": "Native 802.11",
+      "FullDuplex": true,
+      "InterfaceIndex": 8,
+      "DriverInformation": "Driver Date 2006-06-21 Version 10.0.26100.8972 NDIS 6.40",
+      "MtuSize": 1500,
+      "AdminStatus": 1,
+      "Virtual": true
+    },
+    {
+      "Name": "Microsoft IP-HTTPS Platform Interface",
+      "InterfaceDescription": "",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Unspecified",
+      "FullDuplex": null,
+      "InterfaceIndex": 7,
+      "DriverInformation": "Driver Date  Version ",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": true
+    },
+    {
+      "Name": "Cellular 14",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 5,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "Cellular 6",
+      "InterfaceDescription": "Sierra Wireless EM7430 Qualcomm Snapdragon X7 LTE-A",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Wireless WAN",
+      "FullDuplex": null,
+      "InterfaceIndex": 4,
+      "DriverInformation": "Driver Date 2026-08-24 Version 10.0.26100.9278 NDIS 6.89",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": false
+    },
+    {
+      "Name": "6to4 Adapter",
+      "InterfaceDescription": "",
+      "Status": "Not Present",
+      "LinkSpeed": "0 bps",
+      "MacAddress": "",
+      "PhysicalMediaType": "Unspecified",
+      "FullDuplex": null,
+      "InterfaceIndex": 2,
+      "DriverInformation": "Driver Date  Version ",
+      "MtuSize": 0,
+      "AdminStatus": 2,
+      "Virtual": true
+    }
+  ],
+  "netadaptercfg": [
+    {
+      "Description": "Intel(R) Dual Band Wireless-AC 8260",
+      "MACAddress": "F4:96:34:0C:A8:41",
+      "DHCPEnabled": true,
+      "IPAddress": [
+        "10.111.121.179",
+        "fe80::1d93:50a1:e29b:c2a8",
+        "2402:3a80:51:61bc:8af:50d2:a095:b1dc",
+        "2402:3a80:51:61bc:1614:f8d1:adf6:d553"
+      ],
+      "DefaultIPGateway": [
+        "10.111.121.19",
+        "fe80::f036:9bff:fe50:b025"
+      ],
+      "DNSDomain": null
+    }
+  ],
+  "wlanif": [],
+  "wlandrv": [],
+  "bluetooth": [],
+  "btservice": [
+    {
+      "Name": "bthserv",
+      "Status": 1,
+      "StartType": 3,
+      "DisplayName": "Bluetooth Support Service"
+    }
+  ],
+  "btcount": [],
+  "sounddev": [
+    {
+      "Name": "Intel(R) Display Audio",
+      "Manufacturer": "Intel(R) Corporation",
+      "Status": "OK",
+      "StatusInfo": 3,
+      "ConfigManagerErrorCode": 0,
+      "PNPDeviceID": "HDAUDIO\\FUNC_01&VEN_8086&DEV_2809&SUBSYS_80860101&REV_1000\\4&394B8CC1&0&0201",
+      "DeviceID": "HDAUDIO\\FUNC_01&VEN_8086&DEV_2809&SUBSYS_80860101&REV_1000\\4&394B8CC1&0&0201"
+    },
+    {
+      "Name": "Conexant SmartAudio HD",
+      "Manufacturer": "Conexant",
+      "Status": "OK",
+      "StatusInfo": 3,
+      "ConfigManagerErrorCode": 0,
+      "PNPDeviceID": "HDAUDIO\\FUNC_01&VEN_14F1&DEV_2008&SUBSYS_17AA224F&REV_1001\\4&394B8CC1&0&0001",
+      "DeviceID": "HDAUDIO\\FUNC_01&VEN_14F1&DEV_2008&SUBSYS_17AA224F&REV_1001\\4&394B8CC1&0&0001"
+    }
+  ],
+  "audioendpoint": [
+    {
+      "FriendlyName": "Speakers / Headphones (Conexant SmartAudio HD)",
+      "Status": "OK",
+      "InstanceId": "SWD\\MMDEVAPI\\{0.0.0.00000000}.{0A72D7F9-34FA-45E8-9233-21E27D6EBC36}"
+    },
+    {
+      "FriendlyName": "Internal Microphone (Conexant SmartAudio HD)",
+      "Status": "OK",
+      "InstanceId": "SWD\\MMDEVAPI\\{0.0.1.00000000}.{150D8A43-F7C6-4660-BE61-F47A9AD9CD2E}"
+    }
+  ],
+  "audiodev": [
+    {
+      "FriendlyName": "Microsoft Streaming Service Proxy",
+      "Status": "OK",
+      "InstanceId": "SW\\{96E080C7-143C-11D1-B40F-00A0C9223196}\\{3C0D501A-140B-11D1-B40F-00A0C9223196}",
+      "Manufacturer": "Microsoft"
+    },
+    {
+      "FriendlyName": "Intel(R) Display Audio",
+      "Status": "OK",
+      "InstanceId": "HDAUDIO\\FUNC_01&VEN_8086&DEV_2809&SUBSYS_80860101&REV_1000\\4&394B8CC1&0&0201",
+      "Manufacturer": "Intel(R) Corporation"
+    },
+    {
+      "FriendlyName": "Conexant SmartAudio HD",
+      "Status": "OK",
+      "InstanceId": "HDAUDIO\\FUNC_01&VEN_14F1&DEV_2008&SUBSYS_17AA224F&REV_1001\\4&394B8CC1&0&0001",
+      "Manufacturer": "Conexant"
+    }
+  ],
+  "camera": [
+    {
+      "FriendlyName": "Integrated Camera",
+      "Class": "Camera",
+      "Status": "OK",
+      "InstanceId": "USB\\VID_13D3&PID_5682&MI_00\\6&304E240A&0&0000",
+      "Manufacturer": "SunplusIT",
+      "Problem": 0
+    }
+  ],
+  "keyboard": [
+    {
+      "FriendlyName": "Standard PS/2 Keyboard",
+      "Status": "OK",
+      "InstanceId": "ACPI\\LEN0071\\4&22970E31&0",
+      "Manufacturer": "(Standard keyboards)",
+      "Problem": 0
+    }
+  ],
+  "kbdetail": [
+    {
+      "FriendlyName": "Standard PS/2 Keyboard",
+      "InstanceId": "ACPI\\LEN0071\\4&22970E31&0",
+      "Status": "OK",
+      "Problem": 0,
+      "Parent": "PCI\\VEN_8086&DEV_9D48&SUBSYS_224F17AA&REV_21\\3&11583659&0&F8",
+      "BusDesc": null,
+      "Children": ""
+    }
+  ],
+  "rawkbd": [
+    {
+      "FriendlyName": "PCI-to-PCI Bridge",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D10&SUBSYS_224F17AA&REV_F1\\3&11583659&0&E0"
+    },
+    {
+      "FriendlyName": "PCI-to-PCI Bridge",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D18&SUBSYS_224F17AA&REV_F1\\3&11583659&0&E8"
+    },
+    {
+      "FriendlyName": "PCI standard host CPU bridge",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_1904&SUBSYS_224F17AA&REV_08\\3&11583659&0&00"
+    },
+    {
+      "FriendlyName": "PCI-to-PCI Bridge",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D12&SUBSYS_224F17AA&REV_F1\\3&11583659&0&E2"
+    },
+    {
+      "FriendlyName": "PCI-to-PCI Bridge",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D14&SUBSYS_224F17AA&REV_F1\\3&11583659&0&E4"
+    },
+    {
+      "FriendlyName": "PCI standard ISA bridge",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D48&SUBSYS_224F17AA&REV_21\\3&11583659&0&F8"
+    },
+    {
+      "FriendlyName": "Synaptics SMBus Driver",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D23&SUBSYS_224F17AA&REV_21\\3&11583659&0&FC"
+    },
+    {
+      "FriendlyName": "High Definition Audio Controller",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D70&SUBSYS_224F17AA&REV_21\\3&11583659&0&FB"
+    },
+    {
+      "FriendlyName": "Intel(R) Management Engine Interface #1",
+      "Class": "System",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D3A&SUBSYS_224F17AA&REV_21\\3&11583659&0&B0"
+    }
+  ],
+  "pnp_touch": [
+    {
+      "FriendlyName": "HID-compliant touch pad",
+      "Class": "HIDClass",
+      "Status": "OK",
+      "InstanceId": "HID\\SYNHIDMINI&COL02\\1&B12C6D1&0&0001"
+    },
+    {
+      "FriendlyName": "Synaptics HID-Compliant Touch pad Device",
+      "Class": "HIDClass",
+      "Status": "OK",
+      "InstanceId": "ROOT\\SYNHIDMINI\\0000"
+    }
+  ],
+  "camconsent": [
+    {
+      "Value": "Allow"
+    },
+    {
+      "Value": "Allow"
+    }
+  ],
+  "micconsent": [
+    {
+      "Value": "Allow"
+    },
+    {
+      "Value": "Allow"
+    }
+  ],
+  "mouse": [
+    {
+      "FriendlyName": "Synaptics Pointing Device",
+      "Status": "OK",
+      "InstanceId": "ACPI\\LEN007B\\4&22970E31&0",
+      "Manufacturer": "Synaptics",
+      "Problem": 0
+    },
+    {
+      "FriendlyName": "HID-compliant mouse",
+      "Status": "OK",
+      "InstanceId": "HID\\SYNHIDMINI&COL01\\1&B12C6D1&0&0000",
+      "Manufacturer": "Microsoft",
+      "Problem": 0
+    }
+  ],
+  "hid": [
+    {
+      "FriendlyName": "HID-compliant vendor-defined device",
+      "Status": "OK",
+      "InstanceId": "HID\\SYNHIDMINI&COL04\\1&B12C6D1&0&0003"
+    },
+    {
+      "FriendlyName": "Microsoft Input Configuration Device",
+      "Status": "OK",
+      "InstanceId": "HID\\SYNHIDMINI&COL03\\1&B12C6D1&0&0002"
+    },
+    {
+      "FriendlyName": "HID-compliant touch pad",
+      "Status": "OK",
+      "InstanceId": "HID\\SYNHIDMINI&COL02\\1&B12C6D1&0&0001"
+    },
+    {
+      "FriendlyName": "Synaptics HID-Compliant Touch pad Device",
+      "Status": "OK",
+      "InstanceId": "ROOT\\SYNHIDMINI\\0000"
+    }
+  ],
+  "usbctl": [
+    {
+      "Name": "Intel(R) USB 3.0 eXtensible Host Controller - 1.0 (Microsoft)",
+      "Status": "OK",
+      "ProtocolSupported": 16,
+      "Manufacturer": "Generic USB xHCI Host Controller",
+      "DeviceID": "PCI\\VEN_8086&DEV_9D2F&SUBSYS_224F17AA&REV_21\\3&11583659&0&A0"
+    }
+  ],
+  "usbhub": [
+    {
+      "FriendlyName": "USB Root Hub (USB 3.0)",
+      "Status": "OK",
+      "InstanceId": "USB\\ROOT_HUB30\\4&214C80AE&0&0"
+    },
+    {
+      "FriendlyName": "Intel(R) USB 3.0 eXtensible Host Controller - 1.0 (Microsoft)",
+      "Status": "OK",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D2F&SUBSYS_224F17AA&REV_21\\3&11583659&0&A0"
+    }
+  ],
+  "ports": [
+    {
+      "FriendlyName": "Intel(R) Active Management Technology - SOL (COM3)",
+      "Status": "OK",
+      "InstanceId": "PCI\\VEN_8086&DEV_9D3D&SUBSYS_224F17AA&REV_21\\3&11583659&0&B3"
+    }
+  ],
+  "cdrom": [],
+  "sdcard": [
+    {
+      "FriendlyName": "Realtek PCIE CardReader",
+      "Class": "MTD",
+      "Status": "OK",
+      "InstanceId": "PCI\\VEN_10EC&DEV_525A&SUBSYS_224F17AA&REV_01\\4&3FAFFD5&0&00E0"
+    }
+  ],
+  "fingerprint": [
+    {
+      "FriendlyName": "Synaptics WBDI - SGX",
+      "Class": "Biometric",
+      "Status": "OK",
+      "InstanceId": "USB\\VID_138A&PID_0097\\C81D84ED54CB"
+    }
+  ],
+  "problems": [
+    {
+      "FriendlyName": null,
+      "Class": null,
+      "Status": "Error",
+      "Problem": 28,
+      "InstanceId": "USB\\VID_8087&PID_0A2B\\5&56F4A43&0&7"
+    },
+    {
+      "FriendlyName": "Base System Device",
+      "Class": null,
+      "Status": "Error",
+      "Problem": 28,
+      "InstanceId": "PCI\\VEN_8086&DEV_1911&SUBSYS_224F17AA&REV_00\\3&11583659&0&40"
+    },
+    {
+      "FriendlyName": "PCI Memory Controller",
+      "Class": null,
+      "Status": "Error",
+      "Problem": 28,
+      "InstanceId": "PCI\\VEN_8086&DEV_9D21&SUBSYS_224F17AA&REV_21\\3&11583659&0&FA"
+    },
+    {
+      "FriendlyName": "PCI Data Acquisition and Signal Processing Controller",
+      "Class": null,
+      "Status": "Error",
+      "Problem": 28,
+      "InstanceId": "PCI\\VEN_8086&DEV_9D31&SUBSYS_224F17AA&REV_21\\3&11583659&0&A2"
+    }
+  ],
+  "pnpall": [
+    {
+      "Class": "Net",
+      "Count": 6
+    },
+    {
+      "Class": "Firmware",
+      "Count": 4
+    },
+    {
+      "Class": "System",
+      "Count": 54
+    },
+    {
+      "Class": "SoftwareComponent",
+      "Count": 6
+    },
+    {
+      "Class": "Battery",
+      "Count": 2
+    },
+    {
+      "Class": "MEDIA",
+      "Count": 3
+    },
+    {
+      "Class": "Computer",
+      "Count": 2
+    },
+    {
+      "Class": "Volume",
+      "Count": 5
+    },
+    {
+      "Class": "PrintQueue",
+      "Count": 2
+    },
+    {
+      "Class": "SoftwareDevice",
+      "Count": 7
+    },
+    {
+      "Class": "SecurityDevices",
+      "Count": 1
+    },
+    {
+      "Class": "Mouse",
+      "Count": 2
+    },
+    {
+      "Class": "Sensor",
+      "Count": 1
+    },
+    {
+      "Class": "AudioEndpoint",
+      "Count": 2
+    },
+    {
+      "Class": "UCM",
+      "Count": 1
+    },
+    {
+      "Class": "HIDClass",
+      "Count": 4
+    },
+    {
+      "Class": "SCSIAdapter",
+      "Count": 2
+    },
+    {
+      "Class": "",
+      "Count": 5
+    },
+    {
+      "Class": "USB",
+      "Count": 4
+    },
+    {
+      "Class": "Processor",
+      "Count": 4
+    },
+    {
+      "Class": "Camera",
+      "Count": 1
+    },
+    {
+      "Class": "Keyboard",
+      "Count": 1
+    },
+    {
+      "Class": "Monitor",
+      "Count": 1
+    },
+    {
+      "Class": "Display",
+      "Count": 1
+    },
+    {
+      "Class": "DiskDrive",
+      "Count": 1
+    },
+    {
+      "Class": "Biometric",
+      "Count": 1
+    },
+    {
+      "Class": "Ports",
+      "Count": 1
+    },
+    {
+      "Class": "MTD",
+      "Count": 1
+    },
+    {
+      "Class": "AudioProcessingObject",
+      "Count": 1
+    }
+  ],
+  "tpm": [
+    {
+      "SpecVersion": "2.0, 0, 1.16",
+      "IsEnabled_InitialValue": true,
+      "IsActivated_InitialValue": true,
+      "IsOwned_InitialValue": true,
+      "ManufacturerVersion": "71.16.17568.6698",
+      "PhysicalPresenceVersionInfo": "1.3"
+    }
+  ],
+  "secureboot": [
+    {
+      "SecureBoot": false
+    }
+  ],
+  "bitlocker": [
+    {
+      "MountPoint": "C:",
+      "VolumeStatus": 0,
+      "ProtectionStatus": 0,
+      "EncryptionMethod": 0,
+      "LockStatus": 0
+    }
+  ],
+  "uefi": [
+    {
+      "IgnoreCase": true,
+      "LineNumber": 6,
+      "Line": "path                    \\WINDOWS\\system32\\winload.efi",
+      "Filename": "InputStream",
+      "Path": "InputStream",
+      "Pattern": "path",
+      "Context": null,
+      "Matches": []
+    }
+  ],
+  "whea": [],
+  "diskevents": [
+    {
+      "TimeCreated": "/Date(1793911791025)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793911789255)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793911788207)/",
+      "Id": 153,
+      "ProviderName": "Microsoft-Windows-Kernel-Boot",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793908546802)/",
+      "Id": 15,
+      "ProviderName": "Microsoft-Windows-Kernel-General",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793908542580)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793908540785)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793908539704)/",
+      "Id": 153,
+      "ProviderName": "Microsoft-Windows-Kernel-Boot",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793890183682)/",
+      "Id": 15,
+      "ProviderName": "Microsoft-Windows-Kernel-General",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793890178984)/",
+      "Id": 15,
+      "ProviderName": "Microsoft-Windows-Kernel-General",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793890178550)/",
+      "Id": 15,
+      "ProviderName": "Microsoft-Windows-Kernel-General",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793274856033)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793274854247)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793274853202)/",
+      "Id": 153,
+      "ProviderName": "Microsoft-Windows-Kernel-Boot",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793274250120)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793274248312)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793274247204)/",
+      "Id": 153,
+      "ProviderName": "Microsoft-Windows-Kernel-Boot",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793267044026)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793267042252)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793267041202)/",
+      "Id": 153,
+      "ProviderName": "Microsoft-Windows-Kernel-Boot",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793246429105)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793246427326)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793246426195)/",
+      "Id": 153,
+      "ProviderName": "Microsoft-Windows-Kernel-Boot",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793283114270)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793283112435)/",
+      "Id": 98,
+      "ProviderName": "Microsoft-Windows-Ntfs",
+      "LevelDisplayName": "Information"
+    },
+    {
+      "TimeCreated": "/Date(1793283111203)/",
+      "Id": 153,
+      "ProviderName": "Microsoft-Windows-Kernel-Boot",
+      "LevelDisplayName": "Information"
+    }
+  ],
+  "crashevents": [
+    {
+      "TimeCreated": "/Date(1792998133337)/",
+      "Id": 41,
+      "ProviderName": "Microsoft-Windows-Kernel-Power",
+      "LevelDisplayName": "Critical"
+    },
+    {
+      "TimeCreated": "/Date(1792998148862)/",
+      "Id": 6008,
+      "ProviderName": "EventLog",
+      "LevelDisplayName": "Error"
+    }
+  ],
+  "blueevents": [
+    {
+      "TimeCreated": "/Date(1792998133337)/",
+      "Id": 41
+    }
+  ],
+  "winlog": [
+    {
+      "TimeCreated": "/Date(1793899957039)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793895373564)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793895030581)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793891821923)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793891783908)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793891727217)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793891186896)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793891186878)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793890102249)/",
+      "Id": 1001
+    },
+    {
+      "TimeCreated": "/Date(1793890091310)/",
+      "Id": 1001
+    }
+  ],
+  "services": [
+    {
+      "Name": "AudioEndpointBuilder",
+      "Status": 4,
+      "StartType": 2,
+      "DisplayName": "Windows Audio Endpoint Builder"
+    },
+    {
+      "Name": "Audiosrv",
+      "Status": 4,
+      "StartType": 2,
+      "DisplayName": "Windows Audio"
+    },
+    {
+      "Name": "BTHPORT",
+      "Status": 1,
+      "StartType": 3,
+      "DisplayName": "Bluetooth Port Driver"
+    },
+    {
+      "Name": "bthserv",
+      "Status": 1,
+      "StartType": 3,
+      "DisplayName": "Bluetooth Support Service"
+    },
+    {
+      "Name": "CamSvc",
+      "Status": 4,
+      "StartType": 2,
+      "DisplayName": "Capability Access Manager Service"
+    },
+    {
+      "Name": "Netman",
+      "Status": 1,
+      "StartType": 3,
+      "DisplayName": "Network Connections"
+    },
+    {
+      "Name": "SysMain",
+      "Status": 4,
+      "StartType": 2,
+      "DisplayName": "SysMain"
+    },
+    {
+      "Name": "WlanSvc",
+      "Status": 4,
+      "StartType": 2,
+      "DisplayName": "WLAN AutoConfig"
+    }
+  ],
+  "uptime": [
+    {
+      "UpSeconds": 261
+    }
+  ],
+  "memdiag": [],
+  "memdiagsched": [],
+  "win11cpu": [
+    {
+      "Cpu": "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
+      "Tpm": "2.0, 0, 1.16"
+    }
+  ]
+}

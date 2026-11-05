@@ -564,20 +564,28 @@ class KeyboardTest:
         external = (self.ctx.get("input") or {}).get("external") or []
 
         self.top = tk.Toplevel(self.master)
-        self.top.title("Keyboard test - built-in keyboard only")
         self.top.configure(bg=COLOURS["bg"])
-        sw = self.top.winfo_screenwidth()
-        sh = self.top.winfo_screenheight()
-        w = min(sw - 30, 1180)
-        h = min(sh - 30, 820)
-        self.top.geometry("%dx%d+%d+%d" % (w, h, max(0, (sw - w) // 2), max(0, (sh - h) // 2)))
+        # full-screen app surface, like every other guided test
+        self.top.overrideredirect(True)
+        self.top.update_idletasks()
+        from app.core import screen_size
+        sw, sh = screen_size()
+        if not sw:
+            sw = self.top.winfo_screenwidth()
+            sh = self.top.winfo_screenheight()
+        self.top.geometry("%dx%d+0+0" % (sw, sh))
         try:
             self.top.attributes("-topmost", True)
         except Exception:
             pass
-        self.top.minsize(980, 660)
+        from guided.widgets import brand_bar
+        brand_bar(self.top, "Keyboard test - built-in keyboard only",
+                  on_close=self._finish)
+        host = tk.Frame(self.top, bg=COLOURS["bg"])
+        host.pack(fill="both", expand=True,
+                  padx=max(12, (sw - min(1240, sw - 40)) // 2), pady=(8, 12))
 
-        head = tk.Frame(self.top, bg=COLOURS["panel2"])
+        head = tk.Frame(host, bg=COLOURS["panel2"])
         head.pack(fill="x")
         tk.Label(head, text="KEYBOARD TEST  -  built-in keyboard only",
                  bg=COLOURS["panel2"], fg=COLOURS["text"],
@@ -587,7 +595,7 @@ class KeyboardTest:
                  bg=COLOURS["panel2"], fg=COLOURS["accent"], font=("Segoe UI", 10),
                  anchor="w", justify="left", wraplength=1040).pack(anchor="w", padx=16, pady=(2, 10))
 
-        body = tk.Frame(self.top, bg=COLOURS["bg"])
+        body = tk.Frame(host, bg=COLOURS["bg"])
         body.pack(fill="both", expand=True, padx=12, pady=8)
 
         # ---- device panel -------------------------------------------------
@@ -637,7 +645,7 @@ class KeyboardTest:
         self.vio_label.pack(side="left", padx=18)
 
         # ---- confirm + buttons ---------------------------------------------
-        foot = tk.Frame(self.top, bg=COLOURS["panel"])
+        foot = tk.Frame(host, bg=COLOURS["panel"])
         foot.pack(fill="x", side="bottom")
         inner = tk.Frame(foot, bg=COLOURS["panel"])
         inner.pack(fill="x", padx=14, pady=10)

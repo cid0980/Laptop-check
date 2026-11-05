@@ -140,6 +140,20 @@ def stop_sound() -> None:
             pass
 
 
+def max_out_volume() -> bool:
+    """Push the waveOut stream volume to 100% so a turned-down stream can never
+    fake a dead speaker. (System-wide mute is handled by the fixes module.)"""
+    if not IS_WINDOWS:
+        return False
+    try:
+        w = ctypes.windll.winmm
+        w.waveOutSetVolume.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+        w.waveOutSetVolume.restype = ctypes.c_uint
+        return w.waveOutSetVolume(None, 0xFFFFFFFF) == 0
+    except Exception:
+        return False
+
+
 def beep(freq: int = 880, ms: int = 180) -> None:
     if IS_WINDOWS and winsound is not None:
         try:
@@ -382,6 +396,8 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
     fix_note = fixes.ensure_audio()
     if fix_note:
         res.note(fix_note)
+    if max_out_volume():
+        res.note("The tool set the playback stream volume to 100% for this test.")
     tones = ensure_tones()
     if not tones:
         res.skipped("Could not generate the test tones")
@@ -524,6 +540,7 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         state["canvas"] = cv
         state["dlg"] = dlg
         dlg.add_action("\u25cf  START RECORDING", start_rec, COLOURS["accent"])
+        dlg.add_action("\u25b6  SPEAKER\u2192MIC LOOPBACK", loopback, COLOURS["panel2"])
         dlg.add_action("Stop", stop_rec, COLOURS["panel2"])
         _draw_meter(cv, [])
         dlg.say("Press START RECORDING, then speak.")
@@ -596,6 +613,24 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
     def stop_rec() -> None:
         rec.stop()
 
+    def loopback() -> None:
+        """Objective proof: play 1 kHz through the speakers WHILE the mic
+        records. If the mic meter jumps, speaker chain and mic chain both work."""
+        d = state.get("dlg")
+        if not state["started"]:
+            if d:
+                d.say("Press START RECORDING first, then press LOOPBACK.", "#ffd479")
+            return
+        path = (ensure_tones() or {}).get("both")
+        if not path:
+            return
+        max_out_volume()
+        state["lb_t0"] = rec.elapsed()
+        play_wav(path)
+        if d:
+            d.say("Playing 1 kHz through the SPEAKERS while the MIC records - watch the meter jump.",
+                  COLOURS["accent"])
+
     def finish_rec() -> None:
         if not state["started"]:
             return
@@ -606,6 +641,21 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
             best = max(b["peak_db"] for b in state["bars"])
             d.say("Finished. Peak level %.1f dB. Now mark the result." % best,
                   COLOURS["good"] if best > -40 else COLOURS["okay"])
+        lb = state.get("lb_t0")
+        if lb is not None and state["bars"]:
+            base = [b for b in state["bars"] if b["t"] < lb - 0.2]
+            during = [b for b in state["bars"] if lb + 0.3 <= b["t"] <= lb + 3.2]
+            if during:
+                b_db = max([b["peak_db"] for b in base], default=-60.0)
+                d_db = max(b["peak_db"] for b in during)
+                res.metric("Speaker-to-mic loopback",
+                           "%+.1f dB over baseline (%.1f -> %.1f dB)" % (d_db - b_db, b_db, d_db))
+                if d_db - b_db > 6:
+                    res.note("Loopback proof: the microphone clearly heard the speaker tone - "
+                             "speakers AND microphone both work.")
+                else:
+                    res.note("Loopback: the microphone did not clearly hear the speaker tone "
+                             "(mic muted, speakers very quiet, or mic far from speakers).")
 
     marks = [("good", "MIC WORKS", COLOURS["good"]),
              ("weak", "VERY QUIET", COLOURS["okay"]),
