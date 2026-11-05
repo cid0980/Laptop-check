@@ -32,7 +32,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 APP_NAME = "Laptop Check Pro"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 IS_WINDOWS = sys.platform.startswith("win")
 IS_FROZEN = getattr(sys, "frozen", False)
 
@@ -155,31 +155,63 @@ def powershell_exe() -> Optional[str]:
     return None
 
 
-def run_ps(script: str, timeout: float = 60.0) -> str:
-    """Run a PowerShell script via -EncodedCommand. Returns stdout text ('' on error).
+def diag(text: str) -> None:
+    """Append one line to LCP_Data/diagnostics.txt (what the shop sends us)."""
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        with open(os.path.join(DATA_DIR, "diagnostics.txt"), "a", encoding="utf-8") as fh:
+            fh.write("%s  %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), text))
+    except Exception:
+        pass
 
-    EncodedCommand avoids every quoting/escaping nightmare that appears when a
-    script is passed on the command line.
+
+def run_ps(script: str, timeout: float = 60.0) -> str:
+    """Run a PowerShell script and return its stdout ('' on error).
+
+    The script is written to a temporary .ps1 and executed with -File. This is
+    deliberately NOT one giant -EncodedCommand blob: security software on shop
+    PCs (and Windows SmartScreen) frequently kills a process whose command
+    line is a huge base64 string, which used to make every single hardware
+    check fail at once. A small .ps1 file in %TEMP% is boring and gets through.
+    If -File is blocked for some reason we retry with -EncodedCommand.
     """
     if not IS_WINDOWS:
         return ""
     exe = powershell_exe()
     if not exe:
+        diag("run_ps: powershell.exe not found")
         return ""
-    b64 = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
-    args = [
-        exe,
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-EncodedCommand",
-        b64,
-    ]
-    rc, out, err = run_cmd(args, timeout=timeout)
-    if rc != 0 and not out.strip():
-        return ""
-    return out
+    path = ""
+    try:
+        import tempfile
+        fd, path = tempfile.mkstemp(suffix=".ps1", prefix="lcp_")
+        with os.fdopen(fd, "w", encoding="utf-8-sig") as fh:
+            fh.write(script)
+        rc, out, err = run_cmd(
+            [exe, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+             "-File", path], timeout=timeout)
+        if out.strip():
+            return out
+        if rc != 0:
+            diag("run_ps -File rc=%s err=%s" % (rc, (err or "")[:300]))
+    except Exception as exc:
+        diag("run_ps -File exception %s: %s" % (type(exc).__name__, exc))
+    finally:
+        if path:
+            try:
+                os.remove(path)
+            except Exception:
+                pass
+    # fallback: encoded command (short scripts only - keep under ~6k chars)
+    if len(script) <= 6000:
+        b64 = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+        rc, out, err = run_cmd(
+            [exe, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+             "-EncodedCommand", b64], timeout=timeout)
+        if out.strip():
+            return out
+        diag("run_ps -EncodedCommand rc=%s err=%s" % (rc, (err or "")[:300]))
+    return ""
 
 
 def ps_json(script: str, timeout: float = 60.0) -> Any:
@@ -264,22 +296,57 @@ def batch_ps(queries: Dict[str, str], timeout: float = 180.0) -> Dict[str, Any]:
     """
     if not IS_WINDOWS or not queries:
         return {}
-    parts = [
-        "$ProgressPreference='SilentlyContinue';",
-        "$ErrorActionPreference='SilentlyContinue';",
-        "$out = [ordered]@{};",
-    ]
+    def one_call(chunk: Dict[str, str]) -> Dict[str, Any]:
+        parts = [
+            "$ProgressPreference='SilentlyContinue';",
+            "$ErrorActionPreference='SilentlyContinue';",
+            "$out = [ordered]@{};",
+        ]
+        for key, snippet in chunk.items():
+            # & { ... } lets a snippet contain several statements safely.
+            parts.append(
+                "try { $v = & { " + snippet + " }; "
+                "if ($null -ne $v) { $out['%s'] = @($v) } else { $out['%s'] = @() } } "
+                "catch { $out['%s'] = @() }" % (key, key, key)
+            )
+        parts.append("$out | ConvertTo-Json -Depth 4 -Compress")
+        data = ps_json("\n".join(parts), timeout=timeout)
+        return data if isinstance(data, dict) else {}
+
+    # Chunk the snippets: several medium calls beat one enormous script that
+    # a timeout, a crash or an over-zealous antivirus can kill in one go.
+    chunks: List[Dict[str, str]] = []
+    cur: Dict[str, str] = {}
+    size = 0
     for key, snippet in queries.items():
-        # & { ... } lets a snippet contain several statements safely.
-        parts.append(
-            "try { $v = & { " + snippet + " }; "
-            "if ($null -ne $v) { $out['%s'] = @($v) } else { $out['%s'] = @() } } "
-            "catch { $out['%s'] = @() }" % (key, key, key)
-        )
-    parts.append("$out | ConvertTo-Json -Depth 4 -Compress")
-    data = ps_json("\n".join(parts), timeout=timeout)
-    if not isinstance(data, dict):
-        return {}
+        if size and size + len(snippet) > 3500:
+            chunks.append(cur)
+            cur, size = {}, 0
+        cur[key] = snippet
+        size += len(snippet) + 120
+    if cur:
+        chunks.append(cur)
+
+    merged: Dict[str, Any] = {}
+    failed_chunks = 0
+    for chunk in chunks:
+        data = one_call(chunk)
+        if not data:
+            failed_chunks += 1
+            diag("batch_ps: a probe chunk returned nothing (keys: %s)"
+                 % ", ".join(list(chunk)[:8]))
+            # retry that chunk key-by-key so one poisoned snippet cannot
+            # take its neighbours down with it
+            for key, snippet in chunk.items():
+                solo = one_call({key: snippet})
+                if solo.get(key) is not None:
+                    merged[key] = solo[key]
+            continue
+        for k, v in data.items():
+            merged[k] = v
+    if failed_chunks:
+        diag("batch_ps: %d/%d chunks failed outright" % (failed_chunks, len(chunks)))
+    data = merged
     result: Dict[str, Any] = {}
     for k, v in data.items():
         if isinstance(v, list):

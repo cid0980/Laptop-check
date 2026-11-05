@@ -51,7 +51,11 @@ class GuidedDialog:
         self.top.transient(master.winfo_toplevel() if hasattr(master, "winfo_toplevel") else master)
         self.top.resizable(True, True)
         w = width
-        self.top.geometry("%dx%d" % (w, 620))
+        sw = self.top.winfo_screenwidth()
+        sh = self.top.winfo_screenheight()
+        w = min(w, sw - 40)
+        h = min(680, sh - 60)
+        self.top.geometry("%dx%d" % (w, h))
         self.top.minsize(640, 520)
 
         head = tk.Frame(self.top, bg=COLOURS["panel2"])
@@ -213,7 +217,9 @@ def checklist_dialog(master: tk.Misc, title: str, subtitle: str,
     top = tk.Toplevel(master)
     top.title(title)
     top.configure(bg=COLOURS["bg"])
-    top.geometry("%dx%d" % (width, 660))
+    sw = top.winfo_screenwidth()
+    sh = top.winfo_screenheight()
+    top.geometry("%dx%d" % (min(width, sw - 40), min(700, sh - 60)))
     top.minsize(680, 520)
 
     head = tk.Frame(top, bg=COLOURS["panel2"])

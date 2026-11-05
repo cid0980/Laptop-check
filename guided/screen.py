@@ -123,20 +123,27 @@ class ScreenTest:
 
     # ------------------------------------------------------------------ run
     def run(self) -> CheckResult:
-        self.w = self.master.winfo_screenwidth()
-        self.h = self.master.winfo_screenheight()
         self.master.withdraw()
         prevent_sleep(True)
         self.top = tk.Toplevel(self.master)
         self.top.configure(bg="black", cursor="none")
+        # Bullet-proof fullscreen. "-fullscreen" silently does nothing on some
+        # graphics drivers, which left the test in a corner window. A borderless
+        # window pinned to 0,0 at exactly the screen size always covers it.
+        self.top.overrideredirect(True)
+        self.top.update_idletasks()
+        self.w = self.top.winfo_screenwidth()
+        self.h = self.top.winfo_screenheight()
+        self.top.geometry("%dx%d+0+0" % (self.w, self.h))
         try:
-            self.top.attributes("-fullscreen", True)
             self.top.attributes("-topmost", True)
         except Exception:
-            self.top.geometry("%dx%d+0+0" % (self.w, self.h))
+            pass
+        self.top.update()
         self.canvas = tk.Canvas(self.top, width=self.w, height=self.h,
                                 bg="black", highlightthickness=0, bd=0)
         self.canvas.pack(fill="both", expand=True)
+        self.top.bind("<Configure>", self._on_resize)
         self._build_panel()
 
         self.top.bind("<Key>", self._on_key)
@@ -155,6 +162,18 @@ class ScreenTest:
         self.master.lift()
         self._write_result()
         return self.res
+
+    def _on_resize(self, event: Any) -> None:
+        """Re-render the pattern if the window size changes (dpi / monitor)."""
+        if event.widget is not self.top or self.done:
+            return
+        if abs(event.width - self.w) > 2 or abs(event.height - self.h) > 2:
+            self.w, self.h = event.width, event.height
+            try:
+                self.canvas.configure(width=self.w, height=self.h)
+                self._show_screen()
+            except Exception:
+                pass
 
     # ---------------------------------------------------------------- panel
     def _build_panel(self) -> None:

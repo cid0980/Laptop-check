@@ -351,12 +351,11 @@ class MicRecorder:
 
 def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                      emit: Optional[Callable[[str], None]] = None) -> CheckResult:
+    # NOTE: we do NOT gate this test on Windows' device enumeration. Shops
+    # don't care whether Windows lists a "media player" - they care whether
+    # the speakers make sound. So we always play the tones (winmm, part of
+    # Windows itself, no other app involved) and let the human ear decide.
     audio = ctx.get("audio") or {}
-    if not audio.get("speakers"):
-        res.na("No playback device is registered in Windows - nothing to test")
-        res.note("If this machine should have speakers, the audio driver is missing or the "
-                 "speaker cable is disconnected. Check Device Manager > Sound, video and game controllers.")
-        return res
     if not IS_WINDOWS:
         res.skipped("Speaker test needs Windows")
         return res
@@ -367,8 +366,12 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         return res
 
     names = ", ".join(audio.get("speaker_names") or [])[:90]
-    res.metric("Output devices found", audio.get("speakers", 0))
-    res.metric("Device names", names)
+    res.metric("Output devices listed by Windows", audio.get("speakers", 0) or "none listed (ignored)")
+    if names:
+        res.metric("Device names", names)
+    elif not audio.get("speakers"):
+        res.note("Windows listed no playback device, but the tones are played through the "
+                 "system audio stack anyway - trust your ears, not the device list.")
 
     state: Dict[str, Any] = {"played": set()}
 
@@ -464,18 +467,17 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
 
 def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                  emit: Optional[Callable[[str], None]] = None) -> CheckResult:
+    # As with the speakers: try the hardware first (winmm waveIn - part of
+    # Windows, no other app). Windows' device list is only a note, never a
+    # reason to skip: on many shop PCs the list is simply wrong.
     audio = ctx.get("audio") or {}
-    if audio.get("no_mic") or not audio.get("mics"):
-        res.na("No recording device (microphone) is registered in Windows")
-        res.note("Many desktop machines and some laptops have no built-in microphone. "
-                 "If this model should have one, check the privacy settings and the driver.")
-        return res
     if not IS_WINDOWS:
         res.skipped("Microphone test needs Windows")
         return res
 
-    res.metric("Input devices found", audio.get("mics", 0))
-    res.metric("Device names", ", ".join(audio.get("mic_names") or [])[:90])
+    res.metric("Recording devices listed by Windows", audio.get("mics", 0) or "none listed (ignored)")
+    if audio.get("mic_names"):
+        res.metric("Device names", ", ".join(audio.get("mic_names"))[:90])
 
     seconds = 6.0
     rec = MicRecorder(seconds=seconds, sr=22050, chunk_ms=300)

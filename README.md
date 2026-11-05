@@ -28,27 +28,36 @@ margin, clean copy for the customer.
    (Admin rights are what let the tool read drive health (SMART), CPU
    temperatures and the display panel's EDID. Without them it still works,
    just with less detail, and says so.)
-4. Press **START FULL SCAN** and watch it work. Nothing is blank: every check
-   shows its live status, what it found and how long it took.
-5. Switch to **Guided tests** and run the human-judged ones — screen colours,
-   speakers, mic, camera, keyboard, ports, cosmetics, sign-off. Each one shows
-   its own evidence window.
-6. Open **Result & price** for the grade and the ₹ valuation, then **Report**
-   to put your shop name on it and export.
+4. Press the big **START INSPECTION** button. That is the only decision you
+   make for the next few minutes.
+5. Watch: every automatic check appears full-screen in huge type - what is
+   being checked right now, then its result in plain words (GOOD / NEEDS
+   ATTENTION / PROBLEM / NOT FITTED), then the next one.
+6. The hands-on tests then open themselves one after another (screen colours,
+   speakers, mic, camera, keyboard, ports, body, sign-off). Each one tells you
+   in one sentence what to do before it opens.
+7. At the end the grade and the resale price appear in huge type, the branded
+   report is written, and the **PDF is produced automatically** using the
+   Edge/Chrome already on the machine. Buttons to open it, or start the next
+   laptop.
+
+Small buttons on the first and last screen open shop branding, past
+inspections and settings. `F2` shows the live technician log, `F11` toggles
+windowed mode.
 
 > First run on a new PC takes a few seconds while Windows unpacks the exe.
-> Everything the tool saves (reports, photos, branding, price model) lives in
-> a `LCP_Data` folder next to the exe — delete the exe and the data stays,
-> copy both to a new PC and your history comes with you.
+> Everything the tool saves (reports, PDFs, photos, branding, price model)
+> lives in a `LCP_Data` folder next to the exe - delete the exe and the data
+> stays, copy both to a new PC and your history comes with you.
 
-### The three-minute workflow per laptop
+### One laptop, start to finish
 
-| Step | Tab | What you do |
+| Phase | What happens | Your part |
 |---|---|---|
-| 1 | **Scan** | Press START. ~2–4 min, fully automatic, live on screen. |
-| 2 | **Guided tests** | 12 cards. Run each; mark what you see with one keypress. |
-| 3 | **Result & price** | Read the grade and the price breakdown. |
-| 4 | **Report** | Export. Internal copy for you, customer copy for them, Ctrl+P → PDF. |
+| 1. Welcome | one screen, one button | press START |
+| 2. Automatic | 20 hardware checks, full-screen, live | watch (2-4 min) |
+| 3. Hands-on | 12 tests open themselves in order | look / listen / press keys |
+| 4. Finish | grade, price, report + PDF written automatically | open the PDF, hand it over |
 
 ---
 
@@ -126,10 +135,10 @@ to PDF from any browser:
 
 | | |
 |---|---|
-| ![scan](docs/screenshot-scan.png) | ![guided](docs/screenshot-guided.png) |
-| *Live automatic scan — every check visible as it runs* | *Guided test board with per-test verdicts* |
-| ![result](docs/screenshot-result.png) | ![report](docs/screenshot-report.png) |
-| *Grade, group scores, itemised ₹ price* | *Shop branding + export* |
+| ![welcome](docs/screenshot-welcome.png) | ![auto](docs/screenshot-scan.png) |
+| *One button to start - no menus, no tabs* | *Each automatic check full-screen, in plain words* |
+| ![finish](docs/screenshot-result.png) | ![settings](docs/screenshot-settings.png) |
+| *Grade, price and findings; PDF made automatically* | *Shop branding, saved once, printed on every report* |
 
 ---
 

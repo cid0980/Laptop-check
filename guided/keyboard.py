@@ -484,7 +484,15 @@ class KeyboardTest:
         self.top = tk.Toplevel(self.master)
         self.top.title("Keyboard test - built-in keyboard only")
         self.top.configure(bg=COLOURS["bg"])
-        self.top.geometry("1080x760")
+        sw = self.top.winfo_screenwidth()
+        sh = self.top.winfo_screenheight()
+        w = min(sw - 30, 1180)
+        h = min(sh - 30, 820)
+        self.top.geometry("%dx%d+%d+%d" % (w, h, max(0, (sw - w) // 2), max(0, (sh - h) // 2)))
+        try:
+            self.top.attributes("-topmost", True)
+        except Exception:
+            pass
         self.top.minsize(980, 660)
 
         head = tk.Frame(self.top, bg=COLOURS["panel2"])
