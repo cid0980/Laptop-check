@@ -6,6 +6,18 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.1.1] - 2026-11-06
+
+### Fixed
+- **True full screen on scaled displays.** The exe now declares per-monitor
+  DPI awareness *before* the first window is created and takes the screen
+  size straight from Windows in physical pixels. On laptops with 125-150%
+  display scaling the previous build computed "full screen" in logical
+  pixels, so the tool covered only part of the display and the wallpaper
+  stayed visible beside it.
+- The main window stays on top while full-screen, so other windows (setup
+  wizards, chat apps) cannot slide over an inspection in progress.
+
 ## [1.1.0] - 2026-11-05
 
 Shop-usable release, rebuilt from real counter feedback.

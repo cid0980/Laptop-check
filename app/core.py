@@ -32,7 +32,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 APP_NAME = "Laptop Check Pro"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 IS_WINDOWS = sys.platform.startswith("win")
 IS_FROZEN = getattr(sys, "frozen", False)
 
@@ -153,6 +153,51 @@ def powershell_exe() -> Optional[str]:
         if os.path.exists(c) or c == "powershell.exe":
             return c
     return None
+
+
+def set_dpi_aware() -> None:
+    """Tell Windows we draw in PHYSICAL pixels - BEFORE any window exists.
+
+    Shop laptops very often run 125-150% display scaling. If a process does
+    not declare DPI awareness before its first window is created, Windows
+    virtualises it: "the whole screen" becomes a smaller logical rectangle and
+    a full-screen window covers only part of the real display (exactly the
+    bug reported from the counter, with the wallpaper visible beside the
+    tool). Per-monitor awareness (2) is the correct level; older Windows falls
+    back gracefully.
+    """
+    if not IS_WINDOWS:
+        return
+    try:
+        import ctypes
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+            return
+        except Exception:
+            pass
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
+            return
+        except Exception:
+            pass
+        ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
+
+
+def screen_size() -> tuple:
+    """Physical primary-screen size in pixels, straight from Windows."""
+    if IS_WINDOWS:
+        try:
+            import ctypes
+            u = ctypes.windll.user32
+            w = u.GetSystemMetrics(0)
+            h = u.GetSystemMetrics(1)
+            if w > 200 and h > 200:
+                return int(w), int(h)
+        except Exception:
+            pass
+    return 0, 0
 
 
 def diag(text: str) -> None:

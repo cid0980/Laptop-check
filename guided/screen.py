@@ -132,8 +132,11 @@ class ScreenTest:
         # window pinned to 0,0 at exactly the screen size always covers it.
         self.top.overrideredirect(True)
         self.top.update_idletasks()
-        self.w = self.top.winfo_screenwidth()
-        self.h = self.top.winfo_screenheight()
+        from app.core import screen_size
+        self.w, self.h = screen_size()
+        if not self.w:
+            self.w = self.top.winfo_screenwidth()
+            self.h = self.top.winfo_screenheight()
         self.top.geometry("%dx%d+0+0" % (self.w, self.h))
         try:
             self.top.attributes("-topmost", True)

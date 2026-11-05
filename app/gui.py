@@ -33,7 +33,7 @@ from typing import Any, Callable, Dict, List, Optional
 from app.core import (APP_NAME, APP_VERSION, AUTO_IDS, CHECKS, CHECK_INDEX,
                       DATA_DIR, GUIDED_IDS, IS_WINDOWS, PHOTOS_DIR,
                       REPORTS_DIR, Bus, is_admin, load_json, prevent_sleep,
-                      relaunch_as_admin)
+                      relaunch_as_admin, screen_size, set_dpi_aware)
 from app.branding import Branding, Settings
 from app.grading import grade_all
 from app.scan import Scan, list_history
@@ -130,8 +130,14 @@ class Wizard:
             self.root.overrideredirect(self._fs)
             self.root.update_idletasks()
             if self._fs:
-                self.root.geometry("%dx%d+0+0" % (self.root.winfo_screenwidth(),
-                                                  self.root.winfo_screenheight()))
+                sw, sh = screen_size()
+                if not sw:
+                    sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+                self.root.geometry("%dx%d+0+0" % (sw, sh))
+                try:
+                    self.root.attributes("-topmost", True)
+                except Exception:
+                    pass
             else:
                 w, h = 1280, 820
                 self.root.geometry("%dx%d+%d+%d" % (
@@ -827,12 +833,8 @@ def _inr(value: Any) -> str:
 
 
 def main(demo: bool = False) -> int:
+    set_dpi_aware()          # MUST happen before the first window is created
     root = tk.Tk()
-    try:
-        from ctypes import windll
-        windll.shcore.SetProcessDpiAwareness(1)
-    except Exception:
-        pass
     Wizard(root, demo=demo)
     root.mainloop()
     return 0
