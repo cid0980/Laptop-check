@@ -1,0 +1,22 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# build output of PyInstaller (the RELEASED exe is committed under dist/
+# on purpose - see README "Quick Start"; build/ stays ignored)
+build/
+*.manifest
+
+# runtime data the tool creates next to the exe
+LCP_Data/
+selftest.json
+*.log
+
+# editor / os
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
