@@ -6,6 +6,27 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.2.1]
+### Fixed - from the shop PC's own probe file (first real debug iteration)
+- Service verdicts: Get-Service returns enum INTEGERS in JSON (4 = Running); the
+  checks compared words, so EVERY machine was told "Audio/WLAN service not
+  running". Decoded both forms everywhere.
+- Wi-Fi: cellular WWAN modules ("Wireless WAN") were counted as Wi-Fi adapters
+  and flagged DISABLED; excluded. Wi-Fi now judged from the real 802.11 adapter.
+- Checks now re-query services/adapters AFTER the auto-fixes, so a service the
+  tool started itself is never reported stopped.
+- Bluetooth: a radio with a missing driver (Device Manager Code 28, e.g. Intel
+  VID_8087) is reported as "hardware present, driver missing", not "not fitted".
+- Debug bundle zip name contained colons -> [Errno 22] on Windows; sanitised.
+- Keyboard: when a security product swallows WM_INPUT entirely (keys pressed but
+  0 counted), the test falls back to verified hook counting if exactly one
+  built-in keyboard exists, and says so on screen and in the report.
+- The Windows key / Ctrl+Esc are swallowed during the guided phase so the Start
+  menu can never cover a test window again.
+- Ethernet "Not Present" (dock-only RJ45) is a note, not a fault.
+- No advice line sends anyone to Settings/services.msc/Device Manager anymore.
+- Bluetooth Support service is started by the pre-fix pass as well.
+
 ## [1.2.0] - 2026-11-06
 
 The "send me one file and I fix your machine" release.

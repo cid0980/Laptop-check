@@ -35,6 +35,7 @@ import io
 import json
 import os
 import platform
+import re
 import sys
 import threading
 import time
@@ -217,7 +218,11 @@ def bundle(results: Optional[Dict[str, Any]] = None,
            path: Optional[str] = None) -> str:
     """Pack everything a developer needs into one zip. Returns the path."""
     os.makedirs(DATA_DIR, exist_ok=True)
-    path = path or os.path.join(DATA_DIR, "LCP_debug_%s.zip" % now_stamp())
+    if not path:
+        # Windows filenames cannot contain ':' - the raw stamp has colons and
+        # that made the bundle write fail with [Errno 22] on shop PCs.
+        safe = re.sub(r"[\\/:*?\"<>|]", "-", now_stamp()).replace(" ", "_")
+        path = os.path.join(DATA_DIR, "LCP_debug_%s.zip" % safe)
     env = environment()
     parts: Dict[str, str] = {}
     parts["env.json"] = json.dumps(env, indent=2, default=str)

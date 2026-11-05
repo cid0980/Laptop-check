@@ -20,6 +20,7 @@ from app.core import IS_WINDOWS, diag, run_ps, run_shell
 
 AUDIO_SERVICES = ("AudioEndpointBuilder", "Audiosrv")
 WLAN_SERVICES = ("WlanSvc",)
+BT_SERVICES = ("bthserv",)
 
 
 def _state(name: str) -> str:
@@ -129,10 +130,25 @@ def allow_privacy(kind: str) -> str:
     return ""
 
 
+def ensure_bt() -> str:
+    if not IS_WINDOWS:
+        return ""
+    done = []
+    for svc in BT_SERVICES:
+        st = _state(svc)
+        if st.lower() in ("stopped", "paused"):
+            if _start(svc):
+                done.append(svc)
+    if done:
+        return ("The Bluetooth Support service was stopped. The tool started it so "
+                "pairing can be tested.")
+    return ""
+
+
 def run_all_pre_fixes() -> List[str]:
     """Everything sensible before the automatic checks evaluate hardware."""
     notes: List[str] = []
-    for fn in (ensure_audio, ensure_wlan, enable_wifi_adapter):
+    for fn in (ensure_audio, ensure_wlan, enable_wifi_adapter, ensure_bt):
         try:
             note = fn()
             if note:

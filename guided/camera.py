@@ -114,6 +114,13 @@ class CameraTest:
             self.res.flag("No camera photo was stored as evidence", "warn")
         if frames == 0 and not self.state.get("manual"):
             self.res.flag("The camera produced no frames at all during the test", "warn")
+            try:
+                from app.core import diag
+                diag("camera: child reported frames=0 error=%s device=%s consent-fixes=%s"
+                     % (self.state.get("error") or "-", self.state.get("device") or "-",
+                        "yes" if self.state.get("consent_fixed") else "no"))
+            except Exception:
+                pass
 
         if out.get("cancelled"):
             self.res.skipped("Camera test was cancelled by the technician")

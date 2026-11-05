@@ -84,6 +84,17 @@ def probe_all(ctx: Dict[str, Any], bus: Optional[Bus] = None) -> Dict[str, Any]:
     for note in notes:
         bus.emit("log", text="Auto-fix: %s" % note, tag="warn")
         emit("Auto-fix: %s" % note)
+    if notes:
+        # the fixes changed Windows state - re-query the volatile groups so the
+        # checks judge the machine as it is NOW, not as it was before the fixes
+        try:
+            fresh = S.batch_ps({k: S.PS[k] for k in ("services", "netadapter", "netadaptercfg")
+                                if k in getattr(S, "PS", {})}, timeout=90)
+            for k, v in (fresh or {}).items():
+                ctx["raw"][k] = v
+            write_json(os.path.join(DATA_DIR, "last_probe_raw.json"), ctx["raw"])
+        except Exception:
+            pass
 
     bus.emit("phase", text=PHASE2)
     bus.emit("log", text="Phase 2/3 - %s" % PHASE2, tag="hd")

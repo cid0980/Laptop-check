@@ -62,6 +62,35 @@ def _s(v: Any) -> str:
     return "" if s.lower() in ("none", "null") else s
 
 
+# Get-Service / Get-CimInstance serialize enum properties as INTEGERS in JSON
+# (Status 4 == Running, StartType 2 == Automatic). Comparing those against the
+# word "Running" made every real machine look broken - decode both forms.
+_SVC_STATES = {1: "Stopped", 2: "StartPending", 3: "StopPending", 4: "Running",
+               5: "ContinuePending", 6: "PausePending", 7: "Paused"}
+_SVC_STARTS = {0: "Boot", 1: "System", 2: "Automatic", 3: "Manual", 4: "Disabled"}
+
+
+def _svc_state(v: Any) -> str:
+    """Normalise a Windows service Status value to its word form."""
+    if isinstance(v, bool):
+        return _s(v)
+    if isinstance(v, int):
+        return _SVC_STATES.get(v, "Unknown(%s)" % v)
+    s = _s(v)
+    if s.isdigit():
+        return _SVC_STATES.get(int(s), "Unknown(%s)" % s)
+    return s
+
+
+def _svc_start(v: Any) -> str:
+    if isinstance(v, int):
+        return _SVC_STARTS.get(v, "Unknown(%s)" % v)
+    s = _s(v)
+    if s.isdigit():
+        return _SVC_STARTS.get(int(s), "Unknown(%s)" % s)
+    return s
+
+
 def _cim_date(v: Any) -> str:
     """CIM DateTime looks like 20190314091200.000000+330."""
     s = _s(v)
@@ -1036,6 +1065,10 @@ def check_wifi(res: CheckResult, ctx: Dict[str, Any]) -> None:
     wifi = []
     for a in adapters:
         blob = " ".join(_s(get(a, k)) for k in ("InterfaceDescription", "Name", "PhysicalMediaType", "Description")).lower()
+        # WWAN / cellular modules say "Wireless WAN" but are NOT Wi-Fi radios
+        if any(k in blob for k in ("wwan", "cellular", "sierra", "quectel", "fibocom",
+                                   "wireless wan", "lte-a", "snapdragon x")):
+            continue
         if any(k in blob for k in ("wireless", "wi-fi", "wifi", "802.11", "wlan", "native 802.11")):
             wifi.append(a)
     drv = ctx.get("wlan_driver") or {}
@@ -1092,7 +1125,7 @@ def check_wifi(res: CheckResult, ctx: Dict[str, Any]) -> None:
             res.metric("Rx / Tx rate", "%s / %s Mbps" % (iface.get("rx_mbps"), iface.get("tx_mbps")))
     svc = [r for r in _rows(ctx, "services") if _s(get(r, "Name")).lower() == "wlansvc"]
     if svc:
-        st = _s(get(svc[0], "Status"))
+        st = _svc_state(get(svc[0], "Status"))
         res.metric("WLAN service", st)
         if st.lower() != "running":
             score -= 20
@@ -1120,6 +1153,21 @@ def check_bluetooth(res: CheckResult, ctx: Dict[str, Any]) -> None:
     radios = [b for b in bt if "radio" in _s(get(b, "FriendlyName")).lower()
               or _s(get(b, "InstanceId")).upper().startswith(("USB\\", "BTH\\MS_BTHBRB"))]
     if not bt:
+        # A Bluetooth radio can be present but driver-less (Device Manager Code 28,
+        # e.g. Intel radios show as USB\VID_8087). That is a fixable fault, not
+        # "no hardware" - say which one it is.
+        missing = [p for p in _rows(ctx, "problems")
+                   if "VID_8087" in _s(get(p, "InstanceId")).upper()
+                   or _s(get(p, "Class")).lower() == "bluetooth"]
+        if missing:
+            ctx["bluetooth"] = {"present": True, "driver_missing": True}
+            res.metric("Bluetooth radio", "present but WITHOUT driver (Device Manager Code %s)"
+                       % (_s(get(missing[0], "Problem")) or "28"))
+            res.flag("Bluetooth radio is fitted but its driver is not installed - "
+                     "install the Bluetooth driver (usually bundled with the chipset/Wi-Fi driver) "
+                     "and re-test. The tool cannot install drivers itself.", "warn")
+            res.set("warn", "Bluetooth hardware present, driver missing", score=55.0)
+            return
         res.na("No Bluetooth hardware fitted")
         res.note("No Bluetooth radio was found. Common on budget and some business models. "
                  "A USB Bluetooth dongle costs very little if a buyer needs it.")
@@ -1137,8 +1185,8 @@ def check_bluetooth(res: CheckResult, ctx: Dict[str, Any]) -> None:
     if len(bt) > 8:
         res.note("%d Bluetooth-related entries in total." % len(bt))
     if svc:
-        st = _s(get(svc[0], "Status"))
-        res.metric("Bluetooth service", "%s (%s)" % (st, _s(get(svc[0], "StartType"))))
+        st = _svc_state(get(svc[0], "Status"))
+        res.metric("Bluetooth service", "%s (%s)" % (st, _svc_start(get(svc[0], "StartType"))))
         if st.lower() != "running":
             score -= 10
             res.note("The Bluetooth Support Service is not running - start it before testing pairing.")
@@ -1173,6 +1221,9 @@ def check_ethernet(res: CheckResult, ctx: Dict[str, Any]) -> None:
         if st.lower() == "disconnected":
             res.note("No network cable was plugged in during the test - plug one in during the guided port test "
                      "to confirm the port works.")
+        elif st.lower() == "not present":
+            res.note("The LAN chip answers but reports 'not present' - on thin-and-light models the RJ45 "
+                     "lives on a dongle or extension connector that was not attached during the scan.")
         elif st.lower() not in ("up", "connected", "ok"):
             score -= 15
             res.flag("Ethernet adapter status: %s" % st, "warn")
@@ -1209,7 +1260,7 @@ def check_audio_dev(res: CheckResult, ctx: Dict[str, Any]) -> None:
     for e in capture[:6]:
         res.metric("  Input", "%s (%s)" % (_s(get(e, "FriendlyName")), _s(get(e, "Status"))))
 
-    svc = {(_s(get(r, "Name"))).lower(): _s(get(r, "Status")) for r in _rows(ctx, "services")}
+    svc = {(_s(get(r, "Name"))).lower(): _svc_state(get(r, "Status")) for r in _rows(ctx, "services")}
     res.metric("Windows Audio service", svc.get("audiosrv", "?"))
     res.metric("Audio Endpoint Builder", svc.get("audioendpointbuilder", "?"))
     if svc.get("audiosrv", "").lower() != "running":
@@ -1275,11 +1326,12 @@ def check_camera_dev(res: CheckResult, ctx: Dict[str, Any]) -> None:
         res.metric("Windows camera privacy setting", allowed)
         if allowed.lower() == "deny":
             score -= 20
-            res.flag("Windows privacy settings BLOCK camera access - allow it before testing "
-                     "(Settings > Privacy & security > Camera)", "warn")
+            res.flag("Windows privacy settings still BLOCK camera access. The tool already tried to "
+                     "allow it and could not - a group policy or security product is enforcing the "
+                     "block on this machine.", "warn")
     svc = [r for r in _rows(ctx, "services") if _s(get(r, "Name")).lower() == "camsvc"]
     if svc:
-        res.metric("Windows Camera service", _s(get(svc[0], "Status")))
+        res.metric("Windows Camera service", _svc_state(get(svc[0], "Status")))
 
     res.set("pass" if score >= 88 else ("warn" if score >= 55 else "fail"),
             "%d camera device(s) detected" % len(cams), score=score)

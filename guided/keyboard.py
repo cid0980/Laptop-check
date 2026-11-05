@@ -212,6 +212,8 @@ if IS_WINDOWS:
     user32.DispatchMessageW.restype = _L
     user32.PostMessageW.argtypes = [_H, _U, _W, _L]
     user32.PostMessageW.restype = _I
+    user32.PeekMessageW.argtypes = [ctypes.POINTER(MSG), _H, _U, _U, _U]
+    user32.PeekMessageW.restype = _I
     user32.SetWindowsHookExW.argtypes = [_I, HOOKPROC, _H, _U]
     user32.SetWindowsHookExW.restype = _H
     user32.UnhookWindowsHookEx.argtypes = [_H]
@@ -279,6 +281,9 @@ class KeyboardWatcher:
         self.raw_ok = False
         self.hook_ok = False
         self.injected_seen = 0
+        self.hook_keys = 0          # key-downs seen by the low-level hook
+        self.hook_mode = False      # counting from the hook because Raw Input never arrives
+        self._hook_handle = 0
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self._hwnd = None
@@ -307,9 +312,6 @@ class KeyboardWatcher:
                 user32.PostMessageW(self._hwnd, 0x0012, 0, 0)   # WM_QUIT
         except Exception:
             pass
-        t = self._thread
-        if t is not None:
-            t.join(timeout=2.0)
 
     # -------------------------------------------------------------- devices
     def enumerate_devices(self) -> List[Dict[str, Any]]:
@@ -476,7 +478,15 @@ class KeyboardWatcher:
         try:
             if code >= 0 and wparam in (WM_KEYDOWN, WM_SYSKEYDOWN):
                 kb = ctypes.cast(ctypes.c_void_p(lparam), ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
-                if kb.flags & (LLKHF_INJECTED | LLKHF_LOWER_IL_INJECTED):
+                injected = bool(kb.flags & (LLKHF_INJECTED | LLKHF_LOWER_IL_INJECTED))
+                with self.lock:
+                    if not injected:
+                        self.hook_keys += 1
+                        if self.hook_mode:
+                            self.events.append({"vk": int(kb.vkCode), "handle": self._hook_handle,
+                                                "allowed": True, "source": "hook",
+                                                "t": time.time()})
+                if injected:
                     with self.lock:
                         self.injected_seen += 1
                         self.violations.append({
@@ -505,6 +515,20 @@ class KeyboardWatcher:
                 elif cur is None:
                     out[vk] = {"ok": False, "handle": e["handle"]}
         return out
+
+    def enable_hook_mode(self) -> bool:
+        """Fallback counting: some security products swallow WM_INPUT entirely.
+        Only safe when EXACTLY one keyboard exists and it is the built-in one -
+        then every non-injected key-down can only have come from it."""
+        with self.lock:
+            if self.hook_mode or self.events:
+                return self.hook_mode
+            internal = [d for d in self.devices if d.get("allowed")]
+            rejected = [d for d in self.devices if not d.get("allowed")]
+            if len(internal) == 1 and not rejected:
+                self._hook_handle = internal[0].get("handle") or 0
+                self.hook_mode = True
+        return self.hook_mode
 
     def snapshot_violations(self) -> List[Dict[str, Any]]:
         with self.lock:
@@ -706,6 +730,16 @@ class KeyboardTest:
     def _tick(self) -> None:
         if self.top is None or not self.top.winfo_exists():
             return
+        if (not self.watcher.hook_mode and not self.watcher.events
+                and self.watcher.hook_keys >= 3):
+            # Raw Input never arrived although real keys were pressed: something
+            # on this machine swallows WM_INPUT. Fall back to hook counting.
+            if self.watcher.enable_hook_mode():
+                self.warn.configure(bg="#2b2416",
+                    text="RAW INPUT IS BLOCKED ON THIS PC - keys are being counted through the "
+                         "verified low-level hook instead (exactly one built-in keyboard found).")
+                if self.emit:
+                    self.emit("Keyboard: WM_INPUT blocked by this Windows - hook mode enabled")
         pressed = self.watcher.pressed()
         done = 0
         total_req = 0
@@ -814,6 +848,9 @@ class KeyboardTest:
                      "remote session sent them" % self.watcher.injected_seen, "fail")
         if not self.confirm_var.get():
             res.flag("The technician did not tick the 'no external keyboard' confirmation", "warn")
+        if self.watcher.hook_mode:
+            res.flag("Raw Input events were blocked on this machine; keys were verified through "
+                     "the low-level hook with exactly one built-in keyboard present.", "info")
         if not self.watcher.raw_ok:
             res.flag("Raw Input capture was unavailable, so key origins could NOT be verified "
                      "for this test (%s)" % (self.watcher.error or "unknown reason"), "fail")
@@ -862,3 +899,81 @@ class KeyboardTest:
 def run_keyboard_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                       emit: Optional[Callable[[str], None]] = None) -> CheckResult:
     return KeyboardTest(master, res, ctx, emit).run()
+
+
+# --------------------------------------------------------------------------
+# Windows-key blocker: the Start menu must never cover a guided test.
+# Active only while the guided phase runs; the keyboard test's own hook is
+# installed LATER, so it still sees (and counts) every key first.
+# --------------------------------------------------------------------------
+VK_LWIN = 0x5B
+VK_RWIN = 0x5C
+VK_ESCAPE = 0x1B
+VK_CONTROL = 0x11
+_PM_REMOVE = 0x0001
+
+_BLK: Dict[str, Any] = {"hook": None, "proc": None, "thread": None,
+                        "stop": threading.Event(), "ctrl": False}
+
+
+def _blk_proc(code, wparam, lparam):
+    try:
+        if code >= 0:
+            kb = ctypes.cast(ctypes.c_void_p(lparam), ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
+            vk = int(kb.vkCode)
+            down = wparam in (WM_KEYDOWN, WM_SYSKEYDOWN)
+            if vk == VK_CONTROL:
+                _BLK["ctrl"] = down
+            elif down and vk in (VK_LWIN, VK_RWIN):
+                return 1                      # swallow: Start menu must not open mid-test
+            elif down and vk == VK_ESCAPE and _BLK["ctrl"]:
+                return 1                      # Ctrl+Esc opens Start as well
+    except Exception:
+        pass
+    try:
+        return user32.CallNextHookEx(_BLK["hook"], code, wparam, lparam)
+    except Exception:
+        return 0
+
+
+def _blk_loop() -> None:
+    try:
+        _BLK["proc"] = HOOKPROC(_blk_proc)
+        _BLK["hook"] = user32.SetWindowsHookExW(WH_KEYBOARD_LL, _BLK["proc"],
+                                                kernel32.GetModuleHandleW(None), 0)
+        msg = MSG()
+        while not _BLK["stop"].is_set():
+            while user32.PeekMessageW(ctypes.byref(msg), None, 0, 0, _PM_REMOVE):
+                user32.TranslateMessage(ctypes.byref(msg))
+                user32.DispatchMessageW(ctypes.byref(msg))
+            time.sleep(0.01)
+    except Exception:
+        pass
+    finally:
+        try:
+            if _BLK["hook"]:
+                user32.UnhookWindowsHookEx(_BLK["hook"])
+        except Exception:
+            pass
+        _BLK["hook"] = None
+        _BLK["proc"] = None
+
+
+def start_win_blocker() -> None:
+    if not IS_WINDOWS:
+        return
+    t = _BLK["thread"]
+    if t is not None and t.is_alive():
+        return
+    _BLK["stop"].clear()
+    t = threading.Thread(target=_blk_loop, daemon=True)
+    _BLK["thread"] = t
+    t.start()
+
+
+def stop_win_blocker() -> None:
+    _BLK["stop"].set()
+    t = _BLK["thread"]
+    _BLK["thread"] = None
+    if t is not None:
+        t.join(timeout=1.5)

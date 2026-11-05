@@ -177,7 +177,7 @@ def run_touchpad_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
     ext_mice = inp.get("ext_mice") or []
     if not pads:
         res.na("No pointing device (touchpad) is registered in Windows")
-        res.note("If this laptop should have a touchpad, the driver is missing - check Device Manager. "
+        res.note("If this laptop should have a touchpad, the driver is missing - install the touchpad driver from the maker's support page and re-test. "
                  "A missing Precision Touchpad driver is common after a fresh Windows install.")
         return res
 

@@ -242,6 +242,11 @@ class Wizard:
                  bg=C["bg"], fg="#4d5a6d", font=_f(10, False)).pack(side="bottom", pady=(0, 8))
 
     def _exit(self) -> None:
+        try:
+            from guided.keyboard import stop_win_blocker
+            stop_win_blocker()
+        except Exception:
+            pass
         self.root.destroy()
 
     def _load_demo(self) -> None:
@@ -436,6 +441,12 @@ class Wizard:
                 "work on this machine." % bad)
 
     def _begin_guided(self) -> None:
+        # keep the Start menu from ever covering a test window
+        try:
+            from guided.keyboard import start_win_blocker
+            start_win_blocker()
+        except Exception:
+            pass
         self._guided_index = 0
         self.show_guided_card()
 
@@ -610,6 +621,11 @@ class Wizard:
             self._log("valuation failed: %s" % exc)
 
     def show_finish(self) -> None:
+        try:
+            from guided.keyboard import stop_win_blocker
+            stop_win_blocker()
+        except Exception:
+            pass
         self.clear()
         s = self.stage
         self._recompute()
