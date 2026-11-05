@@ -6,6 +6,14 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.1.2] - 2026-11-06
+
+### Added
+- If Windows refuses the hardware probe (security software, stripped-down
+  builds), the tool now says so in plain words on the results screen and
+  points at `LCP_Data\diagnostics.txt`, instead of silently showing
+  NOT TESTED everywhere.
+
 ## [1.1.1] - 2026-11-06
 
 ### Fixed

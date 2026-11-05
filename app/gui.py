@@ -395,6 +395,21 @@ class Wizard:
         self.root.after(90, self._poll)
 
     # ================================================================ guided
+    def _probe_warning(self) -> str:
+        """Plain-words banner when Windows refused to hand over hardware data."""
+        if not IS_WINDOWS:
+            return ""
+        if self.scan.ctx.get("probe_ok", True):
+            return ""
+        bad = sum(1 for c in AUTO_IDS
+                  if self.scan.status_of(c) in ("skipped", "missing", "unknown"))
+        if not bad:
+            return ""
+        return ("Windows refused some hardware reads on this PC, so %d check(s) show as "
+                "NOT TESTED instead of a result. The exact reason is written in "
+                "LCP_Data\\diagnostics.txt - send us that file and we will make the tool "
+                "work on this machine." % bad)
+
     def _begin_guided(self) -> None:
         self._guided_index = 0
         self.show_guided_card()
@@ -411,7 +426,11 @@ class Wizard:
                            "the tool opens each one for you, one after another.\n\n"
                            "Keep the charger connected. Say yes to any Windows prompt."
                  % done_auto, bg=C["bg"], fg=C["text"], font=_f(17, False),
-                 justify="center").pack(pady=(10, 30))
+                 justify="center").pack(pady=(10, 14))
+        warn = self._probe_warning()
+        if warn:
+            tk.Label(mid, text=warn, bg=C["bg"], fg=C["warn"], font=_f(14, False),
+                     wraplength=900, justify="center").pack(pady=(0, 18))
         self.button(mid, "START THE HANDS-ON TESTS", self._guided_step, C["accent"], "white",
                     22, 50, 20).pack()
         self.button(mid, "Skip - go straight to the result", self.show_finish, C["card2"],
@@ -607,6 +626,11 @@ class Wizard:
         flags = g.get("flags") or []
         mid = tk.Frame(s, bg=C["bg"])
         mid.pack(fill="both", expand=True, padx=50, pady=(18, 0))
+        warn = self._probe_warning()
+        if warn:
+            tk.Label(mid, text=warn, bg=C["bg"], fg=C["warn"], font=_f(13, False),
+                     wraplength=1200, justify="left", anchor="w").pack(anchor="w",
+                                                                       pady=(0, 10))
         tk.Label(mid, text="WHAT WE FOUND" if flags else "NOTHING WRONG FOUND",
                  bg=C["bg"], fg=C["text"], font=_f(16)).pack(anchor="w")
         for text, level in flags[:6]:
