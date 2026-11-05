@@ -295,7 +295,6 @@ def checklist_dialog(master: tk.Misc, title: str, subtitle: str,
                           font=("Segoe UI", 9, "bold"), padx=10, pady=4, cursor="hand2",
                           command=make(it["id"], key, text, colour, lbl))
             b.pack(side="left", padx=3)
-            buttons[it["id"]].append(b)
         if it.get("note"):
             ent = tk.Entry(brow, bg=COLOURS["panel2"], fg=COLOURS["text"], relief="flat",
                            insertbackground=COLOURS["text"], font=("Segoe UI", 9), width=30)

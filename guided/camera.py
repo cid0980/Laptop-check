@@ -88,7 +88,9 @@ class CameraTest:
             ["Press START CAMERA. A live picture from the webcam should appear below within ~3 seconds.",
              "Look at the picture: focus, colour, brightness, dead lines, flicker, IR-cut problems.",
              "Press KEEP THIS PHOTO to store the frame as evidence in the report.",
-             "! No picture? Windows may be blocking camera access: Settings > Privacy & security > "
+             "! No picture? The tool already set the Windows camera privacy consent to Allow. "
+             "Check the physical camera shutter / privacy key on this laptop, or attach a photo "
+             "you took with the Windows Camera app."
              "Camera > let desktop apps access your camera. Then press START CAMERA again.",
              "If the driver is broken, use OPEN WINDOWS CAMERA APP or ATTACH A PHOTO, and mark honestly."],
             marks=marks, body_builder=self._build, width=820)
@@ -204,6 +206,10 @@ class CameraTest:
             self._set_info("Camera capture only runs on Windows.", "#ff9d9d")
             self.state["error"] = "Not Windows"
             return
+        from app import fixes
+        note = fixes.allow_privacy("webcam")
+        if note:
+            self.res.note(note)
         self.folder = temp_path("lcp-cam-", "")
         os.makedirs(self.folder, exist_ok=True)
         seconds = int(self.ctx.get("settings", {}).get("camera_seconds", 45) or 45)

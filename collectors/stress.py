@@ -27,6 +27,7 @@ import base64
 import os
 import random
 import subprocess
+import threading
 import time
 import zlib
 from typing import Any, Callable, Dict, List, Optional
@@ -78,6 +79,54 @@ $out = [pscustomobject]@{
 }
 $out | ConvertTo-Json -Depth 4 -Compress
 """
+
+
+def python_burn(cores: int, seconds: int, say: Optional[Any] = None,
+                peaks: Optional[List[float]] = None,
+                ctx: Optional[Dict[str, Any]] = None) -> Dict[str, float]:
+    """Fallback load worker: our own threads, no PowerShell involved.
+
+    Returns the same per-second work-unit curve the PowerShell worker makes,
+    so the throttling analysis below is identical. Python's GIL means the
+    threads share cores, which is fine: we measure SUSTAINED throughput, not
+    peak multi-core performance.
+    """
+    buckets: Dict[int, int] = {}
+    lock = threading.Lock()
+    stop = [False]
+    t0 = time.time()
+
+    def worker() -> None:
+        local: Dict[int, int] = {}
+        x = 123456789
+        while not stop[0]:
+            for _ in range(30000):
+                x = (x * 1103515245 + 12345) & 0x7FFFFFFF
+            sec = int(time.time() - t0)
+            local[sec] = local.get(sec, 0) + 1
+        with lock:
+            for k, v in local.items():
+                buckets[k] = buckets.get(k, 0) + v
+
+    threads = [threading.Thread(target=worker, daemon=True)
+               for _ in range(max(1, min(cores, 8)))]
+    for t in threads:
+        t.start()
+    while time.time() - t0 < seconds:
+        if say:
+            say("CPU under load (built-in worker)... %ds left"
+                % max(0, int(seconds - (time.time() - t0))))
+        if peaks is not None:
+            temps, _clock, _load = read_temperatures()
+            if temps:
+                peaks.append(max(z["c"] for z in temps))
+        if ctx is not None and ctx.get("bus") is not None and ctx["bus"].cancel.is_set():
+            break
+        time.sleep(2.0)
+    stop[0] = True
+    for t in threads:
+        t.join(timeout=5)
+    return {str(k): float(v) for k, v in buckets.items()}
 
 
 def _start_ps(script: str) -> Optional[subprocess.Popen]:
@@ -162,49 +211,58 @@ def check_cpu_stress(res: CheckResult, ctx: Dict[str, Any]) -> None:
     script = (BURN_TEMPLATE.replace("__CORES__", str(cores))
                            .replace("__SECS__", str(seconds)))
     proc = _start_ps(script)
-    if proc is None:
-        res.skipped("Could not start the stress worker (PowerShell unavailable)")
-        return
-
     peaks: List[float] = []
     clocks: List[Any] = []
     loads: List[Any] = []
-    start = time.time()
-    try:
-        while True:
-            elapsed = time.time() - start
-            left = seconds + 8 - elapsed
-            if proc.poll() is not None or left <= 0:
-                break
-            say("CPU under load... %ds elapsed, %ds left" % (int(elapsed), max(0, int(left))))
-            temps, clock, load = read_temperatures()
-            if temps:
-                peaks.append(max(z["c"] for z in temps))
-            if clock:
-                clocks.append(float(clock))
-            if load is not None:
-                loads.append(float(load))
-            if ctx.get("bus") is not None and ctx["bus"].cancel.is_set():
-                break
-            time.sleep(3.0)
-        try:
-            out, err = proc.communicate(timeout=seconds + 60)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            out, err = proc.communicate(timeout=5)
-    finally:
-        if proc.poll() is None:
-            try:
-                proc.kill()
-            except Exception:
-                pass
-
-    from app.core import parse_json_loose
-    data = parse_json_loose(out.decode("utf-8", "replace") if isinstance(out, bytes) else (out or ""))
     curve: Dict[str, Any] = {}
-    if isinstance(data, dict):
-        curve = data.get("curve") or {}
-        res.metric("Actual run time", "%s s" % data.get("elapsed"))
+    if proc is None:
+        # Security software (or a stripped Windows) blocked the PowerShell
+        # worker. The load test still happens - with our own threads - because
+        # "could not start" is not an answer a shop can use.
+        res.note("The PowerShell load worker could not start on this PC (security "
+                 "software usually). The built-in load worker was used instead.")
+        say("PowerShell worker unavailable - using the built-in load worker...")
+        curve = python_burn(cores, seconds, say, peaks, ctx)
+    else:
+        start = time.time()
+        try:
+            while True:
+                elapsed = time.time() - start
+                left = seconds + 8 - elapsed
+                if proc.poll() is not None or left <= 0:
+                    break
+                say("CPU under load... %ds elapsed, %ds left" % (int(elapsed), max(0, int(left))))
+                temps, clock, load = read_temperatures()
+                if temps:
+                    peaks.append(max(z["c"] for z in temps))
+                if clock:
+                    clocks.append(float(clock))
+                if load is not None:
+                    loads.append(float(load))
+                if ctx.get("bus") is not None and ctx["bus"].cancel.is_set():
+                    break
+                time.sleep(3.0)
+            try:
+                out, err = proc.communicate(timeout=seconds + 60)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                out, err = proc.communicate(timeout=5)
+        finally:
+            if proc.poll() is None:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+
+        from app.core import parse_json_loose
+        data = parse_json_loose(out.decode("utf-8", "replace") if isinstance(out, bytes) else (out or ""))
+        if isinstance(data, dict):
+            curve = data.get("curve") or {}
+            res.metric("Actual run time", "%s s" % data.get("elapsed"))
+        if not curve:
+            res.note("The PowerShell load worker produced no data (it may have been "
+                     "killed). The built-in load worker was used instead.")
+            curve = python_burn(cores, seconds, say, peaks, ctx)
 
     if peaks:
         res.metric("Peak temperature", "%.0f C" % max(peaks))

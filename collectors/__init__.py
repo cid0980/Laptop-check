@@ -22,11 +22,12 @@ server or a batch job can inspect a machine with no window at all.
 
 from __future__ import annotations
 
+import os
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-from app.core import (AUTO_IDS, Bus, CheckResult, get_power_status, is_admin,
-                      make_result, run_shell)
+from app.core import (AUTO_IDS, Bus, CheckResult, DATA_DIR, get_power_status,
+                      is_admin, make_result, run_shell, write_json)
 
 from collectors import components as C
 from collectors import stress as ST
@@ -71,6 +72,18 @@ def probe_all(ctx: Dict[str, Any], bus: Optional[Bus] = None) -> Dict[str, Any]:
         bus.emit("log", text="Probe note: %s" % probe["error"], tag="warn")
     bus.emit("probe_done", keys=len(ctx["raw"]))
     emit("Hardware inventory received: %d data groups." % len(ctx["raw"]))
+    try:
+        write_json(os.path.join(DATA_DIR, "last_probe_raw.json"), ctx["raw"])
+    except Exception:
+        pass
+
+    # fix what Windows left broken BEFORE judging the hardware
+    from app import fixes
+    notes = fixes.run_all_pre_fixes()
+    ctx["auto_fixes"] = notes
+    for note in notes:
+        bus.emit("log", text="Auto-fix: %s" % note, tag="warn")
+        emit("Auto-fix: %s" % note)
 
     bus.emit("phase", text=PHASE2)
     bus.emit("log", text="Phase 2/3 - %s" % PHASE2, tag="hd")
@@ -123,6 +136,19 @@ def run_auto_checks(ctx: Dict[str, Any], bus: Optional[Bus] = None,
         bus.emit("check_done", cid=cid, index=i, total=len(todo), status=res.status,
                  summary=res.summary, score=res.score, seconds=res.seconds,
                  flags=len(res.flags), details=len(res.details), error=res.error)
+    # record what the tool fixed itself, on the checks it concerns
+    for note in (ctx.get("auto_fixes") or []):
+        low = note.lower()
+        targets = []
+        if "audio service" in low:
+            targets = ["audio_dev", "speakers"]
+        elif "wlan" in low or "wi-fi adapter" in low:
+            targets = ["wifi"]
+        for cid in targets:
+            r = results.get(cid)
+            if r is not None:
+                r.note(note)
+                r.flag(note, "info")
     return results
 
 

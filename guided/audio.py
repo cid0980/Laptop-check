@@ -212,6 +212,24 @@ class MicRecorder:
             self.error = "winmm unavailable: %s" % exc
             return False
         try:
+            w = self._winmm
+            # 64-bit-safe prototypes: dwCallback / dwInstance are pointer-sized.
+            # Without these, waveInOpen overflows on the callback argument and
+            # the microphone never opens.
+            _U = ctypes.c_uint
+            w.waveInGetNumDevs.restype = _U
+            w.waveInOpen.argtypes = [ctypes.POINTER(ctypes.c_void_p), _U,
+                                     ctypes.POINTER(WAVEFORMATEX), ctypes.c_size_t,
+                                     ctypes.c_size_t, _U]
+            w.waveInOpen.restype = _U
+            for _fn in ("waveInClose", "waveInStart", "waveInReset", "waveInStop"):
+                getattr(w, _fn).argtypes = [ctypes.c_void_p]
+                getattr(w, _fn).restype = _U
+            for _fn in ("waveInPrepareHeader", "waveInUnprepareHeader", "waveInAddBuffer"):
+                getattr(w, _fn).argtypes = [ctypes.c_void_p, ctypes.POINTER(WAVEHDR), _U]
+                getattr(w, _fn).restype = _U
+            w.waveInGetErrorTextW.argtypes = [_U, ctypes.c_wchar_p, _U]
+            w.waveInGetErrorTextW.restype = _U
             ndev = int(self._winmm.waveInGetNumDevs())
         except Exception:
             ndev = 0
@@ -360,6 +378,10 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         res.skipped("Speaker test needs Windows")
         return res
 
+    from app import fixes
+    fix_note = fixes.ensure_audio()
+    if fix_note:
+        res.note(fix_note)
     tones = ensure_tones()
     if not tones:
         res.skipped("Could not generate the test tones")
@@ -475,6 +497,10 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         res.skipped("Microphone test needs Windows")
         return res
 
+    from app import fixes
+    fix_note = fixes.allow_privacy("microphone")
+    if fix_note:
+        res.note(fix_note)
     res.metric("Recording devices listed by Windows", audio.get("mics", 0) or "none listed (ignored)")
     if audio.get("mic_names"):
         res.metric("Device names", ", ".join(audio.get("mic_names"))[:90])
@@ -592,7 +618,8 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                            "Measured with the Windows waveIn API - no extra software",
                            ["Press START RECORDING and speak normally for 6 seconds.",
                             "Watch the meter: it should move while you speak and fall silent when you stop.",
-                            "! If nothing moves at all, check Settings > Privacy & security > Microphone "
+                            "! If nothing moves at all: the tool already set the Windows microphone "
+                            "privacy consent to Allow. Check the microphone mute key on the keyboard."
                             "is set to Allow, then test again before condemning the microphone.",
                             "Then mark the result."],
                            marks=marks, body_builder=build, width=780)

@@ -38,6 +38,7 @@ from app.branding import Branding, Settings
 from app.grading import grade_all
 from app.scan import Scan, list_history
 from app.valuation import estimate, load_model
+from app import debug
 from app import pdf as pdf_mod
 from app import report as report_mod
 
@@ -95,6 +96,9 @@ class Wizard:
         self.scanning = False
         self.demo = demo
         self.log_lines: List[str] = []
+        self._fx: Any = __import__("collections").deque()
+        self._fx_at = 0.0
+        self._fx_fin = False
         self._guided_index = 0
         self._jobs: List[str] = []
         self.pdf_paths: Dict[str, str] = {}
@@ -162,6 +166,7 @@ class Wizard:
             self.drawer.pack(fill="both", expand=True)
 
     def _log(self, text: str) -> None:
+        debug.log(text)
         line = "%s  %s" % (time.strftime("%H:%M:%S"), text)
         self.log_lines.append(line)
         if len(self.log_lines) > 900:
@@ -224,6 +229,7 @@ class Wizard:
         row.pack(side="bottom", pady=22)
         for text, cmd, col in (("Shop & report settings", self.settings_dialog, C["card2"]),
                                ("Past inspections", self.history_dialog, C["card2"]),
+                               ("Create debug file for support", self.make_bundle, C["card2"]),
                                ("Try with demo data", self._load_demo, C["card2"]),
                                ("Exit", self._exit, C["card2"])):
             self.button(row, text, cmd, col, C["text"], 11, 16, 8).pack(side="left", padx=6)
@@ -345,54 +351,73 @@ class Wizard:
                         hint.configure(text=p.get("text", "")[:150])
                     except Exception:
                         pass
-            elif kind == "check_start":
-                if not getattr(self, "now_name", None) or not self.now_name.winfo_exists():
-                    continue
-                cid = p["cid"]
-                name = CHECK_INDEX[cid][1]
-                self.now_label.configure(text="CHECK %d OF %d   -   NOW CHECKING"
-                                         % (p.get("index", 0), p.get("total", len(AUTO_IDS))))
-                self.now_name.configure(text=name)
-                self.now_badge.configure(text="working...", fg=C["muted"])
-                self.now_summary.configure(text="")
-            elif kind == "check_done":
-                if not getattr(self, "now_badge", None) or not self.now_badge.winfo_exists():
-                    self._log("%s -> %s | %s" % (CHECK_INDEX[p["cid"]][1],
-                                                 PLAIN.get(p.get("status"), ("?",))[0],
-                                                 p.get("summary", "")))
-                    continue
-                cid = p["cid"]
-                status = p.get("status", "unknown")
-                word, colour = PLAIN.get(status, ("...", C["muted"]))
-                self.now_badge.configure(text=word, fg=colour)
-                self.now_summary.configure(text=p.get("summary", "") or "")
-                self.now_label.configure(text="CHECK %d OF %d" % (p.get("index", 0),
-                                                                  p.get("total", len(AUTO_IDS))))
-                self.now_name.configure(text=CHECK_INDEX[cid][1])
-                try:
-                    self.bar_fill.configure(width=2)
-                    frac = p.get("index", 0) / max(1, p.get("total", 1))
-                    self.bar.update_idletasks()
-                    self.bar_fill.place(relheight=1.0, relwidth=max(0.004, frac))
-                except Exception:
-                    pass
-                self.auto_count.configure(text="%d / %d" % (p.get("index", 0),
-                                                            p.get("total", len(AUTO_IDS))))
-                self._log("%s -> %s | %s" % (CHECK_INDEX[cid][1], word, p.get("summary", "")))
+            elif kind in ("check_start", "check_done"):
+                # Paced presentation: fast checks must not flash past unread.
+                # Each result stays on screen at least HOLD seconds before the
+                # next one replaces it, even if the worker is already ahead.
+                self._fx.append((kind, p))
             elif kind == "scan_done":
                 self.scanning = False
                 prevent_sleep(False)
                 self._log("Automatic checks finished.")
-                self.later(1200, self._begin_guided)
+                self._fx_fin = True
             elif kind == "scan_failed":
                 self.scanning = False
                 prevent_sleep(False)
                 self._log("SCAN FAILED: %s" % p.get("error"))
+                bpath = debug.bundle(results=debug.results_dump(self.scan.results))
                 messagebox.showerror(APP_NAME, "The automatic scan stopped early:\n%s\n\n"
-                                               "Details are in LCP_Data\\diagnostics.txt."
-                                     % p.get("error"))
+                                               "A debug file with everything the tool saw has "
+                                               "been written:\n%s\nSend it for support."
+                                     % (p.get("error"), bpath or "LCP_Data\\diagnostics.txt"))
                 self._begin_guided()
+        self._pump()
         self.root.after(90, self._poll)
+
+    def _pump(self) -> None:
+        """Release queued auto-check events at a human-readable pace."""
+        now = time.time()
+        if self._fx:
+            kind, p = self._fx[0]
+            hold = 1.7 if kind == "check_done" else 0.6
+            if now - self._fx_at >= hold:
+                self._fx.popleft()
+                self._fx_at = now
+                self._render_fx(kind, p)
+        elif getattr(self, "_fx_fin", False):
+            self._fx_fin = False
+            self.later(900, self._begin_guided)
+
+    def _render_fx(self, kind: str, p: Dict[str, Any]) -> None:
+        if kind == "check_start":
+            if not getattr(self, "now_name", None) or not self.now_name.winfo_exists():
+                return
+            cid = p["cid"]
+            self.now_label.configure(text="CHECK %d OF %d   -   NOW CHECKING"
+                                     % (p.get("index", 0), p.get("total", len(AUTO_IDS))))
+            self.now_name.configure(text=CHECK_INDEX[cid][1])
+            self.now_badge.configure(text="working...", fg=C["muted"])
+            self.now_summary.configure(text="")
+            return
+        if not getattr(self, "now_badge", None) or not self.now_badge.winfo_exists():
+            return
+        cid = p["cid"]
+        status = p.get("status", "unknown")
+        word, colour = PLAIN.get(status, ("...", C["muted"]))
+        self.now_badge.configure(text=word, fg=colour)
+        self.now_summary.configure(text=p.get("summary", "") or "")
+        self.now_label.configure(text="CHECK %d OF %d   -   RESULT"
+                                 % (p.get("index", 0), p.get("total", len(AUTO_IDS))))
+        self.now_name.configure(text=CHECK_INDEX[cid][1])
+        try:
+            frac = p.get("index", 0) / max(1, p.get("total", 1))
+            self.bar.update_idletasks()
+            self.bar_fill.place(relheight=1.0, relwidth=max(0.004, frac))
+        except Exception:
+            pass
+        self.auto_count.configure(text="%d / %d" % (p.get("index", 0),
+                                                    p.get("total", len(AUTO_IDS))))
+        self._log("%s -> %s | %s" % (CHECK_INDEX[cid][1], word, p.get("summary", "")))
 
     # ================================================================ guided
     def _probe_warning(self) -> str:
@@ -539,10 +564,15 @@ class Wizard:
             res.status = "skipped"
             res.error = "%s: %s" % (type(exc).__name__, exc)
             res.summary = "The test window crashed - recorded as NOT TESTED"
+            debug.exception("guided test %s" % cid, exc)
             self._log("hands-on test %s crashed: %s" % (cid, exc))
+            bpath = debug.bundle(results=debug.results_dump(self.scan.results))
             messagebox.showerror(APP_NAME, "That test window stopped with an error:\n%s\n\n"
                                            "It is recorded as NOT TESTED so the report stays "
-                                           "honest. The flow continues." % exc)
+                                           "honest. The flow continues.\n\n"
+                                           "A debug file with the full error was written to:\n%s\n"
+                                           "Send it over and the next update fixes this test."
+                                 % (exc, bpath or "LCP_Data\\diagnostics.txt"))
         word, colour = PLAIN.get(res.status, ("...", C["muted"]))
         self._log("hands-on %s -> %s | %s" % (cid, word, res.summary))
         self._guided_index += 1
@@ -653,6 +683,8 @@ class Wizard:
                     10).pack(side="left", padx=6)
         self.button(row, "See every check", self._all_checks_dialog, C["card2"], C["text"],
                     13, 20, 10).pack(side="left", padx=6)
+        self.button(row, "Debug file", self.make_bundle, C["card2"], C["text"],
+                    13, 20, 10).pack(side="left", padx=6)
         self.button(row, "Check another laptop", self.show_welcome, C["card2"], C["text"],
                     13, 20, 10).pack(side="left", padx=6)
         self.button(row, "Exit", self._exit, C["card2"], C["muted"], 13, 20, 10).pack(
@@ -703,6 +735,30 @@ class Wizard:
                                            command=lambda: report_mod.open_in_browser(html))
         except Exception:
             pass
+
+    def make_bundle(self) -> None:
+        """Pack everything the developer needs into one zip the shop sends."""
+        try:
+            self.clear()
+            mid = tk.Frame(self.stage, bg=C["bg"])
+            mid.pack(expand=True)
+            tk.Label(mid, text="Collecting debug information...", bg=C["bg"],
+                     fg=C["text"], font=_f(22)).pack()
+            self.root.update_idletasks()
+            self.root.update()
+            path = debug.bundle(results=debug.results_dump(self.scan.results))
+        except Exception as exc:
+            debug.exception("make_bundle", exc)
+            path = ""
+        if path:
+            messagebox.showinfo(APP_NAME, "Debug file ready:\n\n%s\n\nSend this one file "
+                                          "(WhatsApp, mail, anything). It contains no customer "
+                                          "data - only what Windows reported, the log and the "
+                                          "error traces." % path)
+        else:
+            messagebox.showerror(APP_NAME, "Could not write the debug file. The raw log is at "
+                                           "LCP_Data\\diagnostics.txt")
+        self.show_welcome()
 
     def _open(self, path: str) -> None:
         try:
@@ -857,6 +913,7 @@ def _inr(value: Any) -> str:
 
 
 def main(demo: bool = False) -> int:
+    debug.install_hooks()
     set_dpi_aware()          # MUST happen before the first window is created
     root = tk.Tk()
     Wizard(root, demo=demo)

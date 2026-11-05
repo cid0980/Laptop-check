@@ -184,6 +184,33 @@ def cmd_report_from(path: str) -> int:
     return 0
 
 
+def cmd_debugbundle(outdir: str = "") -> int:
+    """Headless support bundle: environment + a fresh probe + everything logged.
+
+    Works even when the GUI will not start, which is exactly when we need it.
+    """
+    from app import debug
+    debug.install_hooks()
+    safe_print("Collecting environment and running a fresh hardware probe...")
+    results = {}
+    try:
+        import collectors
+        ctx = collectors.build_ctx(scan_id="DEBUGBUNDLE",
+                                   settings={"skip_stress": True, "skip_memtest": True})
+        collectors.probe_all(ctx)
+        results = collectors.run_auto_checks(ctx, results={})
+    except Exception as exc:
+        debug.exception("debugbundle probe", exc)
+    path = debug.bundle(results=debug.results_dump(results),
+                        path=os.path.join(outdir, "LCP_debug_headless.zip") if outdir else None)
+    safe_print("DEBUG BUNDLE: %s" % path)
+    try:
+        print("DEBUG BUNDLE: %s" % path)
+    except Exception:
+        pass
+    return 0 if path else 1
+
+
 def cmd_gui(demo: bool) -> int:
     from app.gui import main
     return main(demo=demo)
@@ -194,6 +221,8 @@ def main(argv=None) -> int:
                                      description="Laptop Check Pro - used-laptop inspection tool")
     parser.add_argument("--demo", action="store_true", help="start with a simulated scan loaded")
     parser.add_argument("--selftest", action="store_true", help="run a headless self-test")
+    parser.add_argument("--debugbundle", action="store_true",
+                        help="write a support debug zip (env + fresh probe + logs), no GUI")
     parser.add_argument("--version", action="store_true", help="print the version and exit")
     parser.add_argument("--report-from", metavar="FILE", help="re-render a saved scan JSON")
     parser.add_argument("--camera-list", action="store_true", help="list cameras (headless)")
@@ -211,6 +240,8 @@ def main(argv=None) -> int:
         return cmd_version()
     if args.selftest:
         return cmd_selftest(args.outdir)
+    if args.debugbundle:
+        return cmd_debugbundle(args.outdir)
     if args.report_from:
         return cmd_report_from(args.report_from)
     if args.camera_list:

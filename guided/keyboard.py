@@ -178,6 +178,64 @@ class KBDLLHOOKSTRUCT(ctypes.Structure):
 
 
 # --------------------------------------------------------------------------
+# 64-bit-safe prototypes.
+#
+# Without argtypes, ctypes passes EVERY argument as a 32-bit c_int. On a
+# 64-bit process the handles (hInstance, hook module, window handles) are
+# 64-bit values, so the call dies with
+#     OverflowError: int too long to convert
+# exactly at the first handle argument (argument 11 of CreateWindowExW).
+# That killed the message-only window on shop PCs, Raw Input never arrived,
+# and the keyboard test counted 0 keys. Declaring the prototypes fixes it.
+# --------------------------------------------------------------------------
+if IS_WINDOWS:
+    _H = ctypes.c_void_p
+    _U = ctypes.c_uint
+    _I = ctypes.c_int
+    _W = ctypes.c_size_t      # WPARAM
+    _L = ctypes.c_ssize_t     # LPARAM / LRESULT
+
+    user32.CreateWindowExW.argtypes = [
+        _U, ctypes.c_wchar_p, ctypes.c_wchar_p, _U, _I, _I, _I, _I, _H, _H, _H, _H]
+    user32.CreateWindowExW.restype = _H
+    user32.RegisterClassExW.argtypes = [ctypes.POINTER(WNDCLASSEXW)]
+    user32.RegisterClassExW.restype = ctypes.c_ushort
+    user32.UnregisterClassW.argtypes = [ctypes.c_wchar_p, _H]
+    user32.UnregisterClassW.restype = _I
+    user32.DefWindowProcW.argtypes = [_H, _U, _W, _L]
+    user32.DefWindowProcW.restype = _L
+    user32.GetMessageW.argtypes = [ctypes.POINTER(MSG), _H, _U, _U]
+    user32.GetMessageW.restype = _I
+    user32.TranslateMessage.argtypes = [ctypes.POINTER(MSG)]
+    user32.TranslateMessage.restype = _I
+    user32.DispatchMessageW.argtypes = [ctypes.POINTER(MSG)]
+    user32.DispatchMessageW.restype = _L
+    user32.PostMessageW.argtypes = [_H, _U, _W, _L]
+    user32.PostMessageW.restype = _I
+    user32.SetWindowsHookExW.argtypes = [_I, HOOKPROC, _H, _U]
+    user32.SetWindowsHookExW.restype = _H
+    user32.UnhookWindowsHookEx.argtypes = [_H]
+    user32.UnhookWindowsHookEx.restype = _I
+    user32.CallNextHookEx.argtypes = [_H, _I, _W, _L]
+    user32.CallNextHookEx.restype = _L
+    user32.RegisterRawInputDevices.argtypes = [ctypes.POINTER(RAWINPUTDEVICE), _U, _U]
+    user32.RegisterRawInputDevices.restype = _I
+    user32.GetRawInputDeviceList.argtypes = [
+        ctypes.POINTER(RAWINPUTDEVICELIST), ctypes.POINTER(_U), _U]
+    user32.GetRawInputDeviceList.restype = _U
+    user32.GetRawInputDeviceInfoW.argtypes = [_H, _U, ctypes.c_void_p, ctypes.POINTER(_U)]
+    user32.GetRawInputDeviceInfoW.restype = _U
+    user32.GetRawInputData.argtypes = [_H, _U, ctypes.c_void_p, ctypes.POINTER(_U), _U]
+    user32.GetRawInputData.restype = _U
+    user32.DestroyWindow.argtypes = [_H]
+    user32.DestroyWindow.restype = _I
+    kernel32.GetModuleHandleW.argtypes = [ctypes.c_wchar_p]
+    kernel32.GetModuleHandleW.restype = _H
+    kernel32.GetCurrentThreadId.restype = _U
+    kernel32.GetLastError.restype = _U
+
+
+# --------------------------------------------------------------------------
 # device classification
 # --------------------------------------------------------------------------
 

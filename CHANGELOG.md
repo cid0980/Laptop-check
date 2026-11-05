@@ -6,6 +6,36 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.2.0] - 2026-11-06
+
+The "send me one file and I fix your machine" release.
+
+### Added
+- **Built-in debugger and support bundle.** Every log line, every exception
+  with full traceback, the raw hardware probe exactly as Windows returned it,
+  service states, scaling/DPI, security software, camera child-process
+  answer - packed into one zip: `LCP_Data\\LCP_debug_<stamp>.zip`.
+  * button "Create debug file for support" on the first and last screen
+  * written automatically when a test window crashes or the scan fails
+  * headless: `LaptopCheckPro.exe --debugbundle` (works even if the GUI dies)
+- **The tool now fixes the machine instead of sending the user to Windows
+  Settings:** starts stopped Audio / WLAN AutoConfig services, enables a
+  disabled Wi-Fi adapter, and sets camera/microphone privacy consent to
+  Allow - each change recorded as a note in the report.
+- CPU stress test fallback: if security software kills the PowerShell load
+  worker, a built-in thread worker runs the load test anyway.
+
+### Fixed
+- **Keyboard test counted 0 keys**: Win32 calls had no ctypes prototypes, so
+  64-bit handles overflowed 32-bit argument slots
+  ("argument 11: int too long to convert") and the Raw Input window died.
+  Same class of bug fixed for the microphone (waveIn) prototypes.
+- **Touchpad and cosmetic test crashed** with `name 'buttons' is not defined`
+  (leftover line from an older fix).
+- **Automatic checks flashed past unreadably**: results are now paced - each
+  result stays on screen ~1.7 s before the next check appears, and the flow
+  waits for the last result before moving on.
+
 ## [1.1.2] - 2026-11-06
 
 ### Added
