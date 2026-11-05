@@ -14,7 +14,7 @@ from app.core import IS_WINDOWS
 
 if IS_WINDOWS:
     from app import dshow
-    from app.dshow import GUID, com_call, co_create, make_guid
+    from app.dshow import com_call, co_create, make_guid
 
     _CLSID_ENUM = make_guid("{BCDE0395-E52F-467C-8E3D-C4579291692E}")
     _IID_ENUM = make_guid("{A95664D2-9614-4F35-A746-DE8DB63617E6}")
