@@ -65,7 +65,7 @@ class ProgressBar(tk.Canvas):
                  bg: str = "#0f172a", caption: str = "") -> None:
         super().__init__(parent, width=width, height=height, bg=bg,
                          highlightthickness=0, bd=0)
-        self._w, self._h = width, height
+        self._pw, self._ph = width, height
         self.fg, self.track = fg, track
         self._frac = 0.0
         self._caption = caption
@@ -80,15 +80,15 @@ class ProgressBar(tk.Canvas):
     def _draw(self) -> None:
         try:
             self.delete("all")
-            h = self._h
-            self.create_rectangle(0, 0, self._w, h, fill=self.track, outline="")
-            fw = int(self._w * self._frac)
+            h = self._ph
+            self.create_rectangle(0, 0, self._pw, h, fill=self.track, outline="")
+            fw = int(self._pw * self._frac)
             if fw > 2:
                 self.create_rectangle(0, 0, fw, h, fill=self.fg, outline="")
             if self._caption:
                 self.create_text(8, h // 2, anchor="w", fill="#e2e8f0",
                                  text=self._caption, font=("Segoe UI", 10, "bold"))
-            self.create_text(self._w - 8, h // 2, anchor="e", fill="#cbd5e1",
+            self.create_text(self._pw - 8, h // 2, anchor="e", fill="#cbd5e1",
                              text="%d%%" % round(self._frac * 100),
                              font=("Segoe UI", 10, "bold"))
         except Exception:

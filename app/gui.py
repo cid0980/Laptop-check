@@ -826,10 +826,11 @@ class Wizard:
         self.pdf_label.pack(anchor="w", pady=(14, 0))
         self.export_bar = uikit.ProgressBar(s, width=980, height=22,
                                             caption="Building the report and PDFs...")
-        self.export_bar.pack(pady=(10, 0))
+        self.export_bar.pack(pady=(14, 12))
 
         row = tk.Frame(s, bg=C["bg"])
-        row.pack(side="bottom", pady=26)
+        row = tk.Frame(s, bg=C["bg"])
+        row.pack(side="bottom", pady=(0, 18))
         self.btn_pdf = self.button(row, "Open customer PDF", self._open_customer_pdf,
                                    C["good"], "#06230f", 15, 26, 12)
         self.btn_pdf.pack(side="left", padx=6)
@@ -837,14 +838,16 @@ class Wizard:
                     13, 20, 10).pack(side="left", padx=6)
         self.button(row, "Open folder", self._open_folder, C["card2"], C["text"], 13, 20,
                     10).pack(side="left", padx=6)
-        self.button(row, "See every check", self._all_checks_dialog, C["card2"], C["text"],
-                    13, 20, 10).pack(side="left", padx=6)
-        self.button(row, "Debug file", self.make_bundle, C["card2"], C["text"],
-                    13, 20, 10).pack(side="left", padx=6)
-        self.button(row, "Check another laptop", self.show_welcome, C["card2"], C["text"],
-                    13, 20, 10).pack(side="left", padx=6)
-        self.button(row, "Exit", self._exit, C["card2"], C["muted"], 13, 20, 10).pack(
-            side="left", padx=6)
+        row2 = tk.Frame(s, bg=C["bg"])
+        row2.pack(side="bottom", pady=(0, 4))
+        self.button(row2, "See every check", self._all_checks_dialog, C["card2"], C["text"],
+                    12, 18, 8).pack(side="left", padx=5)
+        self.button(row2, "Debug file", self.make_bundle, C["card2"], C["text"],
+                    12, 18, 8).pack(side="left", padx=5)
+        self.button(row2, "Check another laptop", self.show_welcome, C["card2"], C["text"],
+                    12, 18, 8).pack(side="left", padx=5)
+        self.button(row2, "Exit", self._exit, C["card2"], C["muted"], 12, 18, 8).pack(
+            side="left", padx=5)
         threading.Thread(target=self._export_thread, daemon=True).start()
 
     def _export_progress(self, frac: float, caption: str) -> None:
