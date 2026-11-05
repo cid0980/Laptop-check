@@ -59,27 +59,28 @@ windowed mode.
 | Phase | What happens | Your part |
 |---|---|---|
 | 1. Welcome | one screen, one button | press START |
-| 2. Automatic | 21 hardware checks, full-screen, live | watch (2-4 min) |
-| 3. Hands-on | 12 tests open themselves in order | look / listen / press keys |
+| 2. Automatic | 22 hardware checks, full-screen, live | watch (2-4 min) |
+| 3. Hands-on | 13 tests open themselves in order | look / listen / press keys |
 | 4. Finish | grade, price, report + PDF written automatically | open the PDF, hand it over |
 
 ---
 
 ## What it checks
 
-**Automatic (21 checks) — the machine answers for itself**
+**Automatic (22 checks) — the machine answers for itself**
 
 | Group | Checks |
 |---|---|
-| System | machine identity & serial • Windows edition + **activation/licence** + firmware OEM key • BIOS/UEFI, **TPM 2.x, Secure Boot**, Windows 11 readiness • event-log hardware errors (WHEA) |
+| System | machine identity & serial • **leftover previous-owner profiles (privacy)** • Windows edition + **activation/licence** + firmware OEM key • BIOS/UEFI, **TPM 2.x, Secure Boot**, Windows 11 readiness • event-log hardware errors (WHEA) |
 | Core | CPU model/generation/throttle history • **CPU burn test with live temperature** • RAM size/slots/channel • **RAM pattern test** • **storage SMART health, wear %, power-on hours** • GPU |
 | Display | panel from EDID: maker, native resolution, size, manufacture week |
 | Power | **battery health % vs design capacity, cycle count** (from `powercfg /batteryreport`) • charger/AC state |
 | Wireless | Wi-Fi adapter + driver + radio state • Bluetooth • Ethernet |
 | Audio / Camera / Ports / Input | output & input endpoints • camera device + privacy consent • USB controllers & ports • keyboard/touchpad device inventory • **fingerprint / IR face sensor** |
 
-**Guided (12 tests) — the human eye and ear, recorded properly**
+**Guided (13 tests) — the human eye and ear, recorded properly**
 
+- **Touch screen** — nine tap targets across the panel prove the digitiser edge to edge (touch models only)
 - **Screen colours** — 20 full-screen patterns (black, white, red, green,
   blue, greys, gradients, grey steps, checkerboard, 1-pixel lines, geometry
   grid, corner bleed test). The control panel auto-hides so it can never hide
@@ -106,7 +107,7 @@ failing the machine.
 
 ## The grade and the price
 
-- **Grade A+ … E** from a weighted health score (33 checks), with hard caps:
+- **Grade A+ … E** from a weighted health score (35 checks), with hard caps:
   a failing drive, a tampered keyboard test or liquid damage can never be
   hidden by good scores elsewhere.
 - **Price = base value of the CPU generation** (the real driver of used-laptop

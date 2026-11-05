@@ -547,3 +547,101 @@ def fan_out_screen(src: CheckResult, pixels: CheckResult, text: CheckResult,
                    % (label, good, okay, len(bad), len(marks)), score=score)
         if emit:
             emit("%s -> %s (%.0f/100)" % (label, target.status.upper(), score))
+
+
+# --------------------------------------------------------------------------
+# touch screen tap test (only offered when the panel actually has touch)
+# --------------------------------------------------------------------------
+def run_touch_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
+                   emit: Optional[Callable[[str], None]] = None) -> CheckResult:
+    disp = ctx.get("display") or {}
+    if not disp.get("touch"):
+        res.na("No touch screen fitted on this model")
+        return res
+    state = {"hits": set(), "stray": 0, "done": False}
+    top = tk.Toplevel(master)
+    top.configure(bg="#04070c")
+    top.overrideredirect(True)
+    top.update_idletasks()
+    from app.core import screen_size
+    w, h = screen_size()
+    if not w:
+        w, h = top.winfo_screenwidth(), top.winfo_screenheight()
+    top.geometry("%dx%d+0+0" % (w, h))
+    try:
+        top.attributes("-topmost", True)
+    except Exception:
+        pass
+    from guided.widgets import brand_bar
+    brand_bar(top, "Touch screen test", on_close=lambda: _finish(cancel=True))
+    cv = tk.Canvas(top, width=w, height=h, bg="#04070c", highlightthickness=0, bd=0)
+    cv.pack(fill="both", expand=True)
+    tk.Label(top, text="TAP EVERY CIRCLE WITH YOUR FINGER  (a mouse click counts too)",
+             bg="#04070c", fg="#e8edf5", font=("Segoe UI", 20, "bold")).place(
+        relx=0.5, y=26, anchor="n")
+    targets = [(fx * w, fy * h) for fx in (0.12, 0.5, 0.88) for fy in (0.25, 0.55, 0.85)]
+    radius = max(34, min(w, h) // 14)
+
+    def draw() -> None:
+        cv.delete("all")
+        for i, (x, y) in enumerate(targets):
+            hit = i in state["hits"]
+            cv.create_oval(x - radius, y - radius, x + radius, y + radius,
+                           fill="#123b23" if hit else "#101826",
+                           outline="#5ce08a" if hit else "#2f6feb", width=3)
+            if not hit:
+                cv.create_text(x, y, text=str(i + 1), fill="#7c8798",
+                               font=("Segoe UI", 16, "bold"))
+        cv.create_text(w // 2, h - 34, text="%d / %d targets tapped" % (len(state["hits"]), len(targets)),
+                       fill="#93a0b4", font=("Segoe UI", 13, "bold"))
+
+    def _finish(cancel: bool = False) -> None:
+        if state["done"]:
+            return
+        state["done"] = True
+        try:
+            top.destroy()
+        except Exception:
+            pass
+
+    def on_tap(event: Any) -> None:
+        if state["done"]:
+            return
+        for i, (x, y) in enumerate(targets):
+            if i in state["hits"]:
+                continue
+            if (event.x - x) ** 2 + (event.y - y) ** 2 <= (radius + 12) ** 2:
+                state["hits"].add(i)
+                draw()
+                if emit:
+                    emit("Touch target %d/%d hit" % (len(state["hits"]), len(targets)))
+                if len(state["hits"]) == len(targets):
+                    top.after(700, lambda: _finish(False))
+                return
+        state["stray"] += 1
+    cv.bind("<Button-1>", on_tap)
+    draw()
+    top.focus_force()
+
+    def timeout() -> None:
+        if not state["done"]:
+            _finish(False)
+    top.after(90000, timeout)
+    master.wait_window(top)
+
+    n = len(state["hits"])
+    total = len(targets)
+    res.metric("Tap targets hit", "%d / %d" % (n, total))
+    res.metric("Stray touches", state["stray"])
+    if n == total:
+        res.ok("%d/%d tap targets hit with the finger - touch digitiser works edge to edge"
+               % (n, total), score=100.0)
+    elif n == 0:
+        res.fail("No touch target responded - the digitiser is dead or the touch driver "
+                 "is missing", score=10.0)
+        res.flag("Touch screen did not respond at all", "fail")
+    else:
+        res.warn("%d/%d tap targets responded - dead zones on the digitiser (corners/edges "
+                 "are the usual suspects)" % (n, total), score=40.0 + 6.0 * n)
+        res.flag("Touch screen has dead zones: %d of %d targets missed" % (total - n, total), "warn")
+    return res

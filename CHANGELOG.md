@@ -6,6 +6,25 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.4.0]
+### Never lose a run again
+- The inspection is persisted to disk after every check. If the laptop dies
+  (power cut, battery pull, BSOD), the welcome screen offers
+  RESUME LAST INSPECTION and continues at the exact hands-on test it died on.
+### Two new checks (22 automatic + 13 hands-on = 35)
+- Leftover owner data: flags previous owners' Windows user profiles still on
+  the disk - a privacy liability on a resale machine, now a hard fail.
+- Touch screen taps: nine targets across the panel, tapped with the finger;
+  dead zones on the digitiser are measured and flagged (only offered when the
+  panel actually has touch).
+### Stronger verdicts
+- Charger: charge power in watts is judged - charging below 10 W on a non-full
+  battery now means weak/wrong adapter or tired charging circuit.
+### Release safety net
+- run.py --selftest now replays the real shop-PC probe fixture and asserts the
+  verified verdicts (wifi pass, audio pass, BT warn, ...) plus the service-state
+  decoder, so the enum-int bug class can never ship again.
+
 ## [1.3.0]
 ### Guided tests now look and behave like one application
 - Every guided test is a full-screen borderless screen of the app with the

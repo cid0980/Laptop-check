@@ -92,6 +92,7 @@ PS = {
     "ports": "Get-PnpDevice -Class Ports -PresentOnly -ErrorAction SilentlyContinue | Select-Object FriendlyName,Status,InstanceId",
     "cdrom": "Get-CimInstance Win32_CDROMDrive | Select-Object Name,Drive,Status,MediaLoaded,CapabilityDescriptions",
     "sdcard": "Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Card Reader|SD Host|Memory Stick|MMC|Realtek.*Reader' } | Select-Object FriendlyName,Class,Status,InstanceId",
+    "profiles": "Get-CimInstance Win32_UserProfile -ErrorAction SilentlyContinue | Where-Object { -not $_.Special } | Select-Object LocalPath,LastUseName,HealthStatus,LastDownloadTime",
     "fingerprint": "Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Fingerprint|Biometric' -or $_.Class -eq 'Biometric' } | Select-Object FriendlyName,Class,Status,InstanceId",
     # ---- problem devices --------------------------------------------------
     "problems": "Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.Status -ne 'OK' } | Select-Object FriendlyName,Class,Status,Problem,InstanceId | Select-Object -First 40",

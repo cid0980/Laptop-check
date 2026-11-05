@@ -32,7 +32,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 APP_NAME = "Laptop Check Pro"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 IS_WINDOWS = sys.platform.startswith("win")
 IS_FROZEN = getattr(sys, "frozen", False)
 
@@ -736,10 +736,12 @@ CHECKS: List[Tuple[str, str, str, float, str]] = [
     ("ports",      "Ports + expansion",       "Ports",     1.5, "auto"),
     ("input_dev",  "Keyboard / touchpad HW",  "Input",     1.0, "auto"),
     ("biometric",  "Biometric sensor",        "Input",     0.5, "auto"),
+    ("privacy_leftovers", "Leftover owner data", "System", 1.5, "auto"),
     ("events",     "Hardware error log",      "System",    2.0, "auto"),
     # guided (human confirms) -------------------------------------------
     ("screen_colours", "Screen colour test",  "Display",   4.0, "guided"),
     ("screen_pixels",  "Dead pixel / bleed",  "Display",   2.5, "guided"),
+    ("touch",      "Touch screen taps",       "Display",   1.0, "guided"),
     ("screen_text",    "Text sharpness",      "Display",   1.0, "guided"),
     ("speakers",       "Speakers L / R",      "Audio",     2.0, "guided"),
     ("microphone",     "Microphone",          "Audio",     1.5, "guided"),

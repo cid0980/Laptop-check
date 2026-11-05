@@ -166,6 +166,40 @@ def cmd_selftest(outdir: str = "") -> int:
         import guided.screen, guided.audio, guided.camera, guided.keyboard, guided.misc
         import guided.widgets
 
+        # 6. regression gate: the real shop-PC probe (tests/fixture_shop_pc_raw.json)
+        #    must produce the verdicts we verified by hand. This is what catches
+        #    bugs like "Get-Service enums compared as words" before a release.
+        fix_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "tests", "fixture_shop_pc_raw.json")
+        if os.path.exists(fix_path):
+            from app.core import CheckResult
+            from collectors import components as _comp
+            raw = json.load(open(fix_path, "r", encoding="utf-8"))
+            fctx = {"raw": raw,
+                    "wlan_interface": {"present": True, "state": "connected",
+                                       "ssid": "FixtureNet", "signal_percent": 70},
+                    "wlan_driver": {"has_wifi_driver": True, "driver": "x",
+                                    "radio_types": ["802.11ac"]},
+                    "input": {"internal_keyboards": ["k"], "touchpads": ["t"],
+                              "ext_mice": []},
+                    "audio": {"speakers": 1, "mics": 1, "speaker_names": ["S"],
+                              "mic_names": ["M"]}}
+            expect = {"wifi": "pass", "audio_dev": "pass", "bluetooth": "warn",
+                      "ethernet": "pass", "biometric": "pass",
+                      "privacy_leftovers": "pass"}
+            for cid, want in expect.items():
+                fn = _comp.REGISTRY.get(cid)
+                if fn is None:
+                    problems.append("fixture: no check for %s" % cid)
+                    continue
+                r = CheckResult(cid, cid, "fixture")
+                fn(r, fctx)
+                if r.status != want:
+                    problems.append("fixture regression: %s = %s (want %s)"
+                                    % (cid, r.status, want))
+            if _comp._svc_state(4) != "Running" or _comp._svc_state("Stopped") != "Stopped":
+                problems.append("fixture regression: service-state decoder broken")
+
         result = {
             "ok": not problems,
             "app": "%s %s" % (APP_NAME, APP_VERSION),

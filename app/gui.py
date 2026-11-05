@@ -71,6 +71,8 @@ GUIDED_INFO = {
                                  "keep one photo for the report."),
     "keyboard": ("Keyboard", "Press every key shown on the screen map. Only the built-in "
                              "keyboard counts - external keyboards are refused."),
+    "touch": ("Touch screen", "Nine circles appear across the panel. Tap every one with a "
+                              "finger - the tool measures which areas of the digitiser answer."),
     "touchpad": ("Touchpad", "Move, click, scroll and tap as instructed."),
     "usb_ports": ("USB ports", "Plug a pen drive into each USB port. The tool detects it "
                                "by itself - no trusting needed."),
@@ -221,6 +223,12 @@ class Wizard:
         big = self.button(mid, "\u25b6   START INSPECTION", self.begin, C["good"], "#06230f",
                           size=26, padx=60, pady=26)
         big.pack(pady=(0, 10))
+        ip = self._load_inprogress()
+        if ip:
+            done_g = int(ip.get("guided_index") or 0)
+            self.button(mid, "\u21bb   RESUME LAST INSPECTION  (hands-on %d/%d done - the machine "
+                               "died mid-run)" % (done_g, len(GUIDED_IDS)),
+                        self._resume, C["accent"], "white", 15, 30, 12).pack(pady=(0, 10))
         tk.Label(mid, text="About 5 minutes.  The tool does the hardware checks itself,\n"
                            "then walks you through the hands-on tests one by one,\n"
                            "then writes the report and the PDF automatically.",
@@ -240,6 +248,48 @@ class Wizard:
         tk.Label(s, text="v%s   |   F11 window / full screen   |   F2 technician log   |   "
                          "nothing ever leaves this computer" % APP_VERSION,
                  bg=C["bg"], fg="#4d5a6d", font=_f(10, False)).pack(side="bottom", pady=(0, 8))
+
+    # ------------------------------------------------------- crash-resume
+    def _persist(self) -> None:
+        """Keep an on-disk copy of the running inspection so a dead laptop
+        (shop power cut, battery pull, BSOD) never costs a full re-run."""
+        try:
+            from app.core import write_json
+            write_json(os.path.join(DATA_DIR, "inprogress.json"),
+                       {"scan": self.scan.to_dict(), "guided_index": self._guided_index,
+                        "saved_at": time.time()})
+        except Exception:
+            pass
+
+    @staticmethod
+    def _load_inprogress() -> Optional[Dict[str, Any]]:
+        try:
+            from app.core import load_json
+            d = load_json(os.path.join(DATA_DIR, "inprogress.json")) or {}
+            if not d.get("scan") or time.time() - (d.get("saved_at") or 0) > 7 * 86400:
+                return None
+            scan = d["scan"]
+            done = [c for c in AUTO_IDS if c in (scan.get("results") or {})]
+            if len(done) < len(AUTO_IDS):
+                return None          # died during the automatic phase: start fresh
+            return d
+        except Exception:
+            return None
+
+    def _resume(self) -> None:
+        d = self._load_inprogress()
+        if not d:
+            return
+        try:
+            from app.scan import Scan
+            self.scan = Scan.from_dict(d["scan"])
+            self._guided_index = int(d.get("guided_index") or 0)
+            self.demo = False
+            self._log("Resumed inspection %s at hands-on test %d"
+                      % (self.scan.id, self._guided_index + 1))
+            self.show_guided_card()
+        except Exception as exc:
+            self._log("resume failed, starting fresh: %s" % exc)
 
     def _exit(self) -> None:
         try:
@@ -558,6 +608,9 @@ class Wizard:
             elif cid == "keyboard":
                 from guided.keyboard import run_keyboard_test
                 run_keyboard_test(self.root, res, ctx, emit=ctx["emit"])
+            elif cid == "touch":
+                from guided.screen import run_touch_test
+                run_touch_test(self.root, res, ctx, emit=ctx["emit"])
             elif cid == "touchpad":
                 from guided.misc import run_touchpad_test
                 run_touchpad_test(self.root, res, ctx, emit=ctx["emit"])
@@ -589,6 +642,7 @@ class Wizard:
                                            "A debug file with the full error was written to:\n%s\n"
                                            "Send it over and the next update fixes this test."
                                  % (exc, bpath or "LCP_Data\\diagnostics.txt"))
+        self._persist()
         word, colour = PLAIN.get(res.status, ("...", C["muted"]))
         self._log("hands-on %s -> %s | %s" % (cid, word, res.summary))
         self._guided_index += 1
@@ -629,6 +683,10 @@ class Wizard:
         try:
             from guided.keyboard import stop_win_blocker
             stop_win_blocker()
+        except Exception:
+            pass
+        try:
+            os.remove(os.path.join(DATA_DIR, "inprogress.json"))
         except Exception:
             pass
         self.clear()

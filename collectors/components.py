@@ -1032,8 +1032,13 @@ def check_charger(res: CheckResult, ctx: Dict[str, Any]) -> None:
         res.metric("Power online", get(status_rows[0], "PowerOnline"))
 
     if ac == "AC connected":
+        watts = (_num(get((_rows(ctx, "batterystatus") or [{}])[0], "ChargeRate")) or 0) / 1000.0
         if percent is not None and percent >= 99:
             res.ok("Adapter connected, battery full", score=100.0)
+        elif charging and 0 < watts < 10 and (percent or 0) < 95:
+            res.warn("Charging, but only %.1f W reaches the battery - wrong/weak adapter, "
+                     "bad cable or a tired charging circuit" % watts, score=55.0)
+            res.flag("Charge power very low (%.1f W) - verify with a known-good adapter" % watts, "warn")
         elif charging:
             res.ok("Adapter connected and the battery IS charging", score=100.0)
         else:
@@ -1547,6 +1552,32 @@ def check_events(res: CheckResult, ctx: Dict[str, Any]) -> None:
 # ==========================================================================
 
 @safe_check
+def check_privacy_leftovers(res: CheckResult, ctx: Dict[str, Any]) -> None:
+    """A resale laptop must not carry the previous owner's Windows profile."""
+    rows = _rows(ctx, "profiles")
+    names = []
+    for r in rows:
+        lp = _s(get(r, "LocalPath"))
+        nm = lp.rsplit("\\", 1)[-1] if lp else (_s(get(r, "LastUseName")) or "?")
+        if nm.lower() in ("default", "public", "default user", ""):
+            continue
+        names.append(nm)
+    if not rows:
+        res.note("Windows listed no user profiles at all - fresh image assumed.")
+        res.ok("No user profiles found - machine looks freshly imaged", score=100.0)
+        return
+    res.metric("User profiles on disk", len(names) or "none real")
+    if names:
+        res.metric("Leftover accounts", ", ".join(names)[:120])
+        res.flag("%d leftover user profile(s) (%s) - the previous owner's files are still on "
+                 "this disk. Wipe or re-image before selling: this is a privacy liability, "
+                 "not a cosmetic issue." % (len(names), ", ".join(names)[:60]), "fail")
+        res.set("fail", "Previous owner's data still on the disk", score=15.0)
+        return
+    res.ok("Only system profiles present - disk looks clean", score=100.0)
+
+
+@safe_check
 def check_biometric(res: CheckResult, ctx: Dict[str, Any]) -> None:
     """Fingerprint reader / IR face camera: present, and healthy?"""
     bio = _rows(ctx, "fingerprint")
@@ -1591,5 +1622,6 @@ REGISTRY: Dict[str, Any] = {
     "ports": check_ports,
     "input_dev": check_input_dev,
     "biometric": check_biometric,
+    "privacy_leftovers": check_privacy_leftovers,
     "events": check_events,
 }
