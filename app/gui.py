@@ -1077,44 +1077,100 @@ class Wizard:
         sw, sh = top.winfo_screenwidth(), top.winfo_screenheight()
         top.geometry("%dx%d+%d+%d" % (min(1050, sw - 60), min(700, sh - 60), 30, 20))
         top.attributes("-topmost", True)
-        cols = ("scan_id", "date", "machine", "grade", "score", "price", "tech")
-        tree = ttk.Treeview(top, columns=cols, show="headings", height=18)
-        for c, w in zip(cols, (140, 130, 260, 60, 60, 100, 120)):
-            tree.heading(c, text=c.replace("_", " ").title())
-            tree.column(c, width=w, anchor="w")
-        tree.pack(fill="both", expand=True, padx=14, pady=10)
-        if not list_history():
-            tree.pack_forget()
-            uikit.state_card(top, "clock", "muted", "No inspections yet",
-                             "Every finished inspection appears here with its grade, price "
-                             "and a one-click link to its report and PDF.",
-                             "Close", top.destroy).pack(fill="both", expand=True,
-                                                        padx=30, pady=30)
-            return
-        index: Dict[str, Dict[str, Any]] = {}
+        body = tk.Frame(top, bg=C["bg"])
+        body.pack(fill="both", expand=True, padx=16, pady=(6, 4))
+        cv = tk.Canvas(body, bg=C["bg"], highlightthickness=0, bd=0)
+        try:
+            st = ttk.Style(top)
+            st.configure("LCP.Vertical.Scrollbar", troughcolor=C["bg"],
+                         background=C["card2"], borderwidth=0, relief="flat",
+                         arrowcolor=C["muted"], arrowsize=10)
+            st.map("LCP.Vertical.Scrollbar", background=[("active", C["line"])])
+            sb_style = "LCP.Vertical.Scrollbar"
+        except Exception:
+            sb_style = None
+        sb = ttk.Scrollbar(body, orient="vertical", command=cv.yview,
+                           style=sb_style) if sb_style else tk.Scrollbar(
+            body, orient="vertical", command=cv.yview)
+        inner = tk.Frame(cv, bg=C["bg"])
+        inner.bind("<Configure>", lambda e: cv.configure(scrollregion=cv.bbox("all")))
+        win = cv.create_window((0, 0), window=inner, anchor="nw")
+        cv.configure(yscrollcommand=sb.set)
+        cv.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        cv.bind("<Configure>", lambda e: cv.itemconfigure(win, width=e.width))
+        def _wheel(e: Any) -> None:
+            try:
+                cv.yview_scroll(int(-1 * (e.delta / 120 or 1)), "units")
+            except Exception:
+                pass
+        def _wheel_linux(e: Any, d: int) -> None:
+            try:
+                cv.yview_scroll(d, "units")
+            except Exception:
+                pass
+        try:
+            cv.bind_all("<MouseWheel>", _wheel, add="+")
+        except Exception:
+            pass
+        for seq, d in (("<Button-4>", -3), ("<Button-5>", 3)):
+            try:
+                cv.bind_all(seq, lambda e, d=d: _wheel_linux(e, d), add="+")
+            except Exception:
+                pass
+        top.bind("<Destroy>", lambda _e: _unbind_wheel(cv), add="+")
+
+        def gcol(g: str) -> str:
+            g = (g or "?")[:1]
+            return C["good"] if g in "AB" else C["okay"] if g == "C" else C["bad"]
+
         for item in list_history():
-            iid = tree.insert("", "end", values=(item["scan_id"], item["date"], item["machine"],
-                                                 item["grade"], item["score"],
-                                                 _inr(item["suggested"]) if item["suggested"]
-                                                 else "", item["technician"]))
-            index[iid] = item
+            rowf = tk.Frame(inner, bg=C["card"], highlightthickness=1,
+                            highlightbackground=C["line"])
+            rowf.pack(fill="x", pady=4)
+            left = tk.Frame(rowf, bg=C["card"])
+            left.pack(side="left", padx=14, pady=10)
+            tk.Label(left, text=item.get("machine") or "Unknown machine",
+                     bg=C["card"], fg=C["text"], font=_f(13),
+                     anchor="w").pack(anchor="w")
+            tk.Label(left, text="%s   -   %s   -   technician: %s"
+                     % (item.get("date", "")[:16], item.get("scan_id", "")[:12],
+                        item.get("technician") or "-"),
+                     bg=C["card"], fg=C["muted"], font=_f(10, False),
+                     anchor="w").pack(anchor="w", pady=(2, 0))
+            chip = tk.Label(rowf, text=" %s " % (item.get("grade") or "?"),
+                            bg=gcol(item.get("grade")), fg="white",
+                            font=_f(16), padx=10, pady=6)
+            chip.pack(side="left", padx=(10, 12))
+            mid = tk.Frame(rowf, bg=C["card"])
+            mid.pack(side="left", fill="x", expand=True)
+            tk.Label(mid, text=("%s / 100" % item.get("score")) if item.get("score")
+                     else "", bg=C["card"], fg=C["muted"],
+                     font=_f(11, False)).pack(anchor="w")
+            tk.Label(mid, text=_inr(item["suggested"]) if item.get("suggested")
+                     else "no price", bg=C["card"], fg=C["text"],
+                     font=_f(13)).pack(anchor="w", pady=(2, 0))
+            rb = self.button(rowf, "Open report", lambda it=item: self._open_history_item(it),
+                             C["card2"], C["text"], 11, 14, 7)
+            rb.pack(side="right", padx=12)
 
-        def open_sel() -> None:
-            sel = tree.selection()
-            if not sel:
-                return
-            item = index.get(sel[0])
-            if item and os.path.exists(item.get("file", "")):
-                data = load_json(item["file"])
-                if data:
-                    self.scan = Scan.from_dict(data)
-                    self.demo = bool(data.get("demo"))
-                    self._recompute()
-                    top.destroy()
-                    self.show_finish()
+    def _open_history_item(self, item: Dict[str, Any]) -> None:
+        if item and os.path.exists(item.get("file", "")):
+            data = load_json(item["file"])
+            if data:
+                self.scan = Scan.from_dict(data)
+                self.demo = bool(data.get("demo"))
+                self._recompute()
+                self.show_finish()
 
-        tk.Button(top, text="Open this inspection", bg=C["accent"], fg="white", relief="flat",
-                  font=_f(12), padx=18, pady=8, command=open_sel).pack(pady=(0, 14))
+
+
+def _unbind_wheel(cv: Any) -> None:
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        try:
+            cv.unbind_all(seq)
+        except Exception:
+            pass
 
 
 def _inr(value: Any) -> str:
