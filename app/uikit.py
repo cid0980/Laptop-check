@@ -48,7 +48,7 @@ def icon_label(parent: tk.Misc, name: str, colour: str = "white",
                bg: Optional[str] = None, size: int = 48) -> tk.Label:
     """A label showing one icon; keeps the PhotoImage reference alive."""
     img = icon(name, colour)
-    lab = tk.Label(parent, bg=bg or (parent["bg"] if "bg" in parent.keys() else "#0f1218"),
+    lab = tk.Label(parent, bg=bg or (parent["bg"] if "bg" in parent.keys() else "#0f172a"),
                    image=img if img else "", text="" if img else "",
                    width=0 if img else 0, height=0 if img else 0)
     lab.image = img          # type: ignore[attr-defined]
@@ -61,8 +61,8 @@ class ProgressBar(tk.Canvas):
     """Determinate professional progress bar: track, smooth fill, caption."""
 
     def __init__(self, parent: tk.Misc, width: int = 900, height: int = 26,
-                 fg: str = "#2f6feb", track: str = "#1e2430",
-                 bg: str = "#0f1218", caption: str = "") -> None:
+                 fg: str = "#3b82f6", track: str = "#334155",
+                 bg: str = "#0f172a", caption: str = "") -> None:
         super().__init__(parent, width=width, height=height, bg=bg,
                          highlightthickness=0, bd=0)
         self._w, self._h = width, height
@@ -86,9 +86,9 @@ class ProgressBar(tk.Canvas):
             if fw > 2:
                 self.create_rectangle(0, 0, fw, h, fill=self.fg, outline="")
             if self._caption:
-                self.create_text(8, h // 2, anchor="w", fill="#e8edf5",
+                self.create_text(8, h // 2, anchor="w", fill="#e2e8f0",
                                  text=self._caption, font=("Segoe UI", 10, "bold"))
-            self.create_text(self._w - 8, h // 2, anchor="e", fill="#c9d3e3",
+            self.create_text(self._w - 8, h // 2, anchor="e", fill="#cbd5e1",
                              text="%d%%" % round(self._frac * 100),
                              font=("Segoe UI", 10, "bold"))
         except Exception:
@@ -106,7 +106,7 @@ class BusyOverlay:
     def __init__(self, master: tk.Misc, title: str, detail: str = "",
                  icon_name: str = "activity") -> None:
         self.top = tk.Toplevel(master)
-        self.top.configure(bg="#0b0e13")
+        self.top.configure(bg="#0f172a")
         self.top.overrideredirect(True)
         self.top.update_idletasks()
         try:
@@ -116,15 +116,15 @@ class BusyOverlay:
             self.top.attributes("-topmost", True)
         except Exception:
             pass
-        mid = tk.Frame(self.top, bg="#0b0e13")
+        mid = tk.Frame(self.top, bg="#0f172a")
         mid.pack(expand=True)
         self._img = icon(icon_name, "accent")
         if self._img:
-            tk.Label(mid, bg="#0b0e13", image=self._img).pack(pady=(0, 14))
-        self.title_lab = tk.Label(mid, text=title, bg="#0b0e13", fg="#e8edf5",
+            tk.Label(mid, bg="#0f172a", image=self._img).pack(pady=(0, 14))
+        self.title_lab = tk.Label(mid, text=title, bg="#0f172a", fg="#e2e8f0",
                                   font=("Segoe UI", 22, "bold"))
         self.title_lab.pack()
-        self.detail_lab = tk.Label(mid, text=detail, bg="#0b0e13", fg="#93a0b4",
+        self.detail_lab = tk.Label(mid, text=detail, bg="#0f172a", fg="#94a3b8",
                                    font=("Segoe UI", 12), justify="center")
         self.detail_lab.pack(pady=(6, 18))
         self.bar = ProgressBar(mid, width=760, height=24)
@@ -175,33 +175,99 @@ class BusyOverlay:
 
 def state_card(parent: tk.Misc, icon_name: str, colour: str, title: str,
                text: str = "", action_text: str = "",
-               action_cmd: Optional[Any] = None, bg: str = "#0f1218") -> tk.Frame:
+               action_cmd: Optional[Any] = None, bg: str = "#0f172a") -> tk.Frame:
     """The one consistent 'state of this page' block: icon + headline +
     plain-language explanation + a single obvious action."""
-    card = tk.Frame(parent, bg="#171b23", highlightthickness=1,
-                    highlightbackground="#2b3240")
+    card = tk.Frame(parent, bg="#1e293b", highlightthickness=1,
+                    highlightbackground="#334155")
     card.pack(fill="x", pady=8, padx=4)
-    inner = tk.Frame(card, bg="#171b23")
+    inner = tk.Frame(card, bg="#1e293b")
     inner.pack(fill="x", padx=18, pady=14)
-    left = tk.Frame(inner, bg="#171b23")
+    left = tk.Frame(inner, bg="#1e293b")
     left.pack(side="left")
     img = icon(icon_name, colour)
     if img:
-        tk.Label(left, image=img, bg="#171b23").pack(side="left", padx=(0, 14))
+        tk.Label(left, image=img, bg="#1e293b").pack(side="left", padx=(0, 14))
         left.image = img          # type: ignore[attr-defined]
-    right = tk.Frame(inner, bg="#171b23")
+    right = tk.Frame(inner, bg="#1e293b")
     right.pack(side="left", fill="x", expand=True)
-    tk.Label(right, text=title, bg="#171b23", fg="#e8edf5",
+    tk.Label(right, text=title, bg="#1e293b", fg="#e2e8f0",
              font=("Segoe UI", 15, "bold"), anchor="w",
              wraplength=820, justify="left").pack(fill="x")
     if text:
-        tk.Label(right, text=text, bg="#171b23", fg="#93a0b4",
+        tk.Label(right, text=text, bg="#1e293b", fg="#94a3b8",
                  font=("Segoe UI", 11), anchor="w", wraplength=820,
                  justify="left").pack(fill="x", pady=(3, 0))
     if action_text and action_cmd is not None:
-        tk.Button(right, text=action_text, bg="#2f6feb", fg="white",
+        tk.Button(right, text=action_text, bg="#3b82f6", fg="white",
                   relief="flat", font=("Segoe UI", 11, "bold"), padx=16,
-                  pady=6, cursor="hand2", activebackground="#2f6feb",
+                  pady=6, cursor="hand2", activebackground="#3b82f6",
                   activeforeground="white", command=action_cmd).pack(
             anchor="w", pady=(10, 0))
     return card
+
+
+# --------------------------------------------------------------------------
+# motion: subtle, professional, never decorative-only
+# --------------------------------------------------------------------------
+def shade(hexcol: str, factor: float) -> str:
+    """Lighten (factor>1) or darken (factor<1) a #rrggbb colour."""
+    try:
+        h = hexcol.lstrip("#")
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+        r = max(0, min(255, int(r * factor)))
+        g = max(0, min(255, int(g * factor)))
+        b = max(0, min(255, int(b * factor)))
+        return "#%02x%02x%02x" % (r, g, b)
+    except Exception:
+        return hexcol
+
+
+def hoverify(widget: tk.Misc, base: str, fg: str = "") -> None:
+    """Give any button/label a hover lift + pressed shade."""
+    over = shade(base, 1.18)
+    def _in(_e: Any = None) -> None:
+        try:
+            widget.configure(bg=over)
+        except Exception:
+            pass
+    def _out(_e: Any = None) -> None:
+        try:
+            widget.configure(bg=base)
+        except Exception:
+            pass
+    widget.bind("<Enter>", _in)
+    widget.bind("<Leave>", _out)
+
+
+def rise(widget: tk.Misc, start: int = 18, steps: int = 7, delay: int = 16) -> None:
+    """Ease a packed frame upward into place (page-transition feel)."""
+    def step(i: int) -> None:
+        try:
+            if i >= steps:
+                widget.pack_configure(pady=(0, 0))
+                return
+            y = int(start * (1 - (i + 1) / steps) ** 2)
+            widget.pack_configure(pady=(y, 0))
+            widget.after(delay, lambda: step(i + 1))
+        except Exception:
+            pass
+    try:
+        widget.pack_configure(pady=(start, 0))
+        widget.after(delay, lambda: step(0))
+    except Exception:
+        pass
+
+
+def pulse_dots(label: tk.Label, base_text: str, stop_flag: Dict[str, bool],
+               delay: int = 380) -> None:
+    """'working' -> 'working.' -> 'working..' ... until stop_flag['stop']."""
+    def tick(n: int) -> None:
+        try:
+            if stop_flag.get("stop") or not label.winfo_exists():
+                return
+            label.configure(text=base_text + "." * (n % 4))
+            label.after(delay, lambda: tick(n + 1))
+        except Exception:
+            pass
+    tick(0)

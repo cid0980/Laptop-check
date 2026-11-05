@@ -190,7 +190,7 @@ def measure_pointer(master: tk.Misc, seconds: float = 12.0) -> Dict[str, Any]:
     except Exception:
         return out
     top = tk.Toplevel(master)
-    top.configure(bg="#0f1218")
+    top.configure(bg="#0f172a")
     top.overrideredirect(True)
     top.update_idletasks()
     from app.core import screen_size
@@ -205,9 +205,9 @@ def measure_pointer(master: tk.Misc, seconds: float = 12.0) -> Dict[str, Any]:
     from guided.widgets import brand_bar
     brand_bar(top, "Touchpad measurement")
     tk.Label(top, text="MOVE YOUR FINGER ALL OVER THE PAD\nand press LEFT and RIGHT click a few times",
-             bg="#0f1218", fg="#e8edf5", font=("Segoe UI", 22, "bold"),
+             bg="#0f172a", fg="#e2e8f0", font=("Segoe UI", 22, "bold"),
              justify="center").pack(expand=True)
-    bar = tk.Label(top, text="", bg="#0f1218", fg="#2f6feb", font=("Segoe UI", 14, "bold"))
+    bar = tk.Label(top, text="", bg="#0f172a", fg="#3b82f6", font=("Segoe UI", 14, "bold"))
     bar.pack(pady=(0, 60))
     state = {"last": _POINT(), "l": False, "r": False, "t0": time.time()}
     user32.GetCursorPos(ctypes.byref(state["last"]))
@@ -412,7 +412,7 @@ def run_usb_port_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
             tk.Button(r, text="Dead", bg="#5b2320", fg="#ffb4ad", relief="flat",
                       font=("Segoe UI", 8), padx=8, cursor="hand2",
                       command=lambda i=i: mark(i, "dead")).pack(side="left", padx=3)
-            tk.Button(r, text="Works (manual)", bg="#3a3320", fg="#ffd479", relief="flat",
+            tk.Button(r, text="Works (manual)", bg="#3a3320", fg="#fcd34d", relief="flat",
                       font=("Segoe UI", 8), padx=8, cursor="hand2",
                       command=lambda i=i: mark(i, "manual")).pack(side="left", padx=3)
             tk.Button(r, text="Not fitted", bg="#252a33", fg="#9fb0c8", relief="flat",
@@ -452,7 +452,7 @@ def run_usb_port_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         else:
             if d:
                 d.say("Port %d: nothing appeared. Try the drive again, or mark it Dead / Works "
-                      "(manual) if you are sure." % i, "#ffd479")
+                      "(manual) if you are sure." % i, "#fcd34d")
             beep(220, 260)
 
     dlg = GuidedDialog(master, "USB port test", "Every socket tested by plugging a device in",
@@ -537,7 +537,7 @@ def run_web_ports_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         if d:
             d.say("%s -> %s" % (key.upper(), "DETECTED automatically" if changed
                                 else "no change detected; mark manually"),
-                  COLOURS["good"] if changed else "#ffd479")
+                  COLOURS["good"] if changed else "#fcd34d")
         beep(880 if changed else 220, 160)
         refresh()
 
@@ -799,7 +799,7 @@ def run_signoff(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                  fg=COLOURS["bad"] if pending else COLOURS["good"],
                  font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x", padx=12)
         txt = tk.Text(box, height=min(7, max(2, len(pending) or 1)), bg="#0d1016",
-                      fg="#ffd479" if pending else "#7ee2a8", relief="flat",
+                      fg="#fcd34d" if pending else "#7ee2a8", relief="flat",
                       font=("Consolas", 9), wrap="word")
         txt.pack(fill="both", expand=True, padx=12, pady=(2, 6))
         txt.insert("1.0", "\n".join("  - " + p for p in pending) if pending

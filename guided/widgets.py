@@ -16,11 +16,12 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from app import theme as _T
 COLOURS = {
-    "bg": "#0f1218", "panel": "#171b23", "panel2": "#1e2430",
-    "text": "#e8edf5", "muted": "#93a0b4", "line": "#2b3240",
-    "good": "#1f9d55", "okay": "#c9a227", "bad": "#d0453b",
-    "skip": "#4b5563", "accent": "#2f6feb",
+    "bg": _T.BG, "panel": _T.SURFACE, "panel2": _T.RAISED,
+    "text": _T.TEXT, "muted": _T.MUTED, "line": _T.LINE,
+    "good": _T.GOOD, "okay": _T.OKAY, "bad": _T.BAD,
+    "skip": _T.NA, "accent": _T.ACCENT,
 }
 
 MARKS: List[Tuple[str, str, str]] = [
@@ -48,19 +49,19 @@ def _step_text() -> str:
 def brand_bar(top: tk.Misc, title: str, on_close: Optional[Callable[[], None]] = None) -> tk.Frame:
     """The thin app-chrome bar every guided surface shares, so the tests look
     like screens of one application instead of foreign pop-ups."""
-    bar = tk.Frame(top, bg="#0b0e13")
+    bar = tk.Frame(top, bg=_T.BG)
     bar.pack(fill="x", side="top")
-    tk.Label(bar, text="LAPTOP CHECK PRO", bg="#0b0e13", fg="#6b7688",
+    tk.Label(bar, text="LAPTOP CHECK PRO", bg=_T.BG, fg=_T.MUTED,
              font=("Segoe UI", 9, "bold")).pack(side="left", padx=18, pady=(7, 0))
     st = _step_text()
     if st:
-        tk.Label(bar, text=st, bg="#0b0e13", fg="#2f6feb",
+        tk.Label(bar, text=st, bg=_T.BG, fg=_T.ACCENT,
                  font=("Segoe UI", 9, "bold")).pack(side="left", padx=(10, 0), pady=(7, 0))
-    tk.Label(bar, text=title, bg="#0b0e13", fg="#93a0b4",
+    tk.Label(bar, text=title, bg=_T.BG, fg=_T.MUTED,
              font=("Segoe UI", 9)).pack(side="left", padx=(14, 0), pady=(7, 0))
     if on_close is not None:
-        tk.Button(bar, text="\u2715", bg="#0b0e13", fg="#93a0b4", relief="flat",
-                  activebackground="#1e2430", activeforeground="#e8edf5",
+        tk.Button(bar, text="\u2715", bg=_T.BG, fg=_T.MUTED, relief="flat",
+                  activebackground=_T.RAISED, activeforeground=_T.TEXT,
                   font=("Segoe UI", 10, "bold"), cursor="hand2",
                   command=on_close).pack(side="right", padx=10, pady=2)
     return bar

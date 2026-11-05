@@ -184,9 +184,9 @@ class CameraTest:
     def _open_app(self) -> None:
         if open_windows_camera_app():
             self._set_info("Windows Camera app opened. Close it before pressing START CAMERA here "
-                           "(only one app can hold the webcam at a time).", "#ffd479")
+                           "(only one app can hold the webcam at a time).", "#fcd34d")
         else:
-            self._set_info("Could not open the Windows Camera app.", "#ff9d9d")
+            self._set_info("Could not open the Windows Camera app.", "#fca5a5")
 
     def _attach(self) -> None:
         path = filedialog.askopenfilename(
@@ -203,14 +203,14 @@ class CameraTest:
             self._set_info("Attached %s" % os.path.basename(path), COLOURS["good"])
             self.res.metric("Photo attached from file", path)
         except Exception as exc:
-            self._set_info("Could not copy that file: %s" % exc, "#ff9d9d")
+            self._set_info("Could not copy that file: %s" % exc, "#fca5a5")
 
     # --------------------------------------------------------------- capture
     def start(self) -> None:
         if self.state["running"]:
             self.stop()
         if not IS_WINDOWS:
-            self._set_info("Camera capture only runs on Windows.", "#ff9d9d")
+            self._set_info("Camera capture only runs on Windows.", "#fca5a5")
             self.state["error"] = "Not Windows"
             return
         from app import fixes
@@ -227,7 +227,7 @@ class CameraTest:
             self.proc = subprocess.Popen(cmd, **_popen_kwargs())
         except Exception as exc:
             self.state["error"] = "Could not start the capture helper: %s" % exc
-            self._set_info(self.state["error"], "#ff9d9d")
+            self._set_info(self.state["error"], "#fca5a5")
             return
         self.state["running"] = True
         self.state["frames"] = 0
@@ -269,12 +269,12 @@ class CameraTest:
                 except Exception:
                     pass
         elif status.get("error"):
-            self._set_info("Camera capture failed: %s" % status["error"][:220], "#ff9d9d")
+            self._set_info("Camera capture failed: %s" % status["error"][:220], "#fca5a5")
         elif not alive:
             self.state["running"] = False
             if not status.get("error"):
                 self.state["error"] = self.state["error"] or "The capture helper stopped unexpectedly"
-            self._set_info("Capture stopped. %s" % (status.get("error") or ""), "#ff9d9d")
+            self._set_info("Capture stopped. %s" % (status.get("error") or ""), "#fca5a5")
             return
         if alive or files:
             try:
@@ -305,7 +305,7 @@ class CameraTest:
     def keep_frame(self) -> None:
         files = sorted(glob.glob(os.path.join(self.folder or "", "frame_*.png"))) if self.folder else []
         if not files:
-            self._set_info("Nothing to keep yet - wait for a live frame first.", "#ffd479")
+            self._set_info("Nothing to keep yet - wait for a live frame first.", "#fcd34d")
             return
         scan = self.ctx.get("scan_id", "scan")
         dest = os.path.join(PHOTOS_DIR, "%s_camera_%s.png" % (scan, time.strftime("%H%M%S")))
@@ -317,7 +317,7 @@ class CameraTest:
             if self.emit:
                 self.emit("Camera photo saved: %s" % os.path.basename(dest))
         except Exception as exc:
-            self._set_info("Could not save the photo: %s" % exc, "#ff9d9d")
+            self._set_info("Could not save the photo: %s" % exc, "#fca5a5")
 
     def stop(self) -> None:
         self.state["running"] = False

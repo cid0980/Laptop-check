@@ -19,8 +19,8 @@ SRC = os.path.join(HERE, "icon_src")
 OUT = os.path.join(HERE, "..", "assets", "icons")
 
 COLOURS = {
-    "white": "#e8edf5", "muted": "#93a0b4", "good": "#1f9d55",
-    "okay": "#c9a227", "bad": "#d0453b", "accent": "#2f6feb",
+    "white": "#e2e8f0", "muted": "#94a3b8", "good": "#10b981",
+    "okay": "#f59e0b", "bad": "#ef4444", "accent": "#3b82f6",
 }
 
 

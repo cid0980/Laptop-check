@@ -6,6 +6,32 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.5.0]
+### Professional UI system
+- One colour truth (app/theme.py): charcoal neutral + off-white ink + a single
+  blue accent; green/amber/red exist ONLY as verdict semantics. Reference:
+  three-tier dashboard colour systems (neutral 60 / surface 20 / accent 10 /
+  semantic 5).
+- 33 open-source icons (Feather ISC + Tabler MIT) rasterised into the exe -
+  no emoji anywhere; status icons on results, icons on utility buttons.
+- Motion with meaning: cards rise into place, buttons hover/press shades,
+  the working badge pulses, every progress bar eases.
+### The user always sees work happening
+- Professional progress bar + percent on the automatic stage.
+- Report/PDF export shows a live stepped progress bar; both PDFs print in
+  parallel (roughly half the wait).
+- Debug bundle and any long operation run under a full-screen busy overlay.
+### Reports that explain themselves
+- Inline SVG diagrams: health-score gauge, stacked outcome bar, price
+  waterfall of the biggest plus/minus factors. Light print theme retuned.
+### The tool fixes even more by itself
+- Windows master volume unmuted/raised before speaker judgement (Core Audio).
+- Panel brightness set to 100% during the display test, restored afterwards.
+- High-performance power plan during the CPU burn, old plan restored.
+### Fixed
+- stress: run_cmd import (Windows-only crash), drawer log tagging, history
+  empty state, CTA colour discipline.
+
 ## [1.4.0]
 ### Never lose a run again
 - The inspection is persisted to disk after every check. If the laptop dies

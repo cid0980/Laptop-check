@@ -204,24 +204,24 @@ class ScreenTest:
 
     # ---------------------------------------------------------------- panel
     def _build_panel(self) -> None:
-        self.panel = tk.Frame(self.top, bg="#111318", highlightthickness=1,
-                              highlightbackground="#3a4150")
-        self.title = tk.Label(self.panel, text="", bg="#111318", fg="#ffffff",
+        self.panel = tk.Frame(self.top, bg="#1e293b", highlightthickness=1,
+                              highlightbackground="#334155")
+        self.title = tk.Label(self.panel, text="", bg="#1e293b", fg="#ffffff",
                               font=("Segoe UI", 15, "bold"), anchor="w")
         self.title.pack(fill="x", padx=14, pady=(10, 0))
-        self.look = tk.Label(self.panel, text="", bg="#111318", fg="#c9d3e3",
+        self.look = tk.Label(self.panel, text="", bg="#1e293b", fg="#cbd5e1",
                              font=("Segoe UI", 10), anchor="w", justify="left",
                              wraplength=max(420, self.w - 80))
         self.look.pack(fill="x", padx=14, pady=(2, 6))
 
-        row = tk.Frame(self.panel, bg="#111318")
+        row = tk.Frame(self.panel, bg="#1e293b")
         row.pack(fill="x", padx=14, pady=(0, 8))
-        self.mark_label = tk.Label(row, text="Not marked", bg="#111318", fg="#8b93a5",
+        self.mark_label = tk.Label(row, text="Not marked", bg="#1e293b", fg="#8b93a5",
                                    font=("Segoe UI", 10, "bold"), width=14, anchor="w")
         self.mark_label.pack(side="left")
-        for text, key, colour in (("GOOD  (1)", "good", "#1f9d55"),
-                                  ("OKAY  (2)", "okay", "#c9a227"),
-                                  ("BAD  (3)", "bad", "#d0453b"),
+        for text, key, colour in (("GOOD  (1)", "good", "#10b981"),
+                                  ("OKAY  (2)", "okay", "#f59e0b"),
+                                  ("BAD  (3)", "bad", "#ef4444"),
                                   ("SKIP  (4)", "skip", "#5b6472")):
             b = tk.Button(row, text=text, bg=colour, fg="white", relief="flat",
                           activeforeground="white", activebackground=colour,
@@ -230,14 +230,14 @@ class ScreenTest:
                           command=lambda k=key: self._mark(k))
             b.pack(side="left", padx=4)
 
-        row2 = tk.Frame(self.panel, bg="#111318")
+        row2 = tk.Frame(self.panel, bg="#1e293b")
         row2.pack(fill="x", padx=14, pady=(0, 10))
-        tk.Label(row2, text="Note:", bg="#111318", fg="#8b93a5",
+        tk.Label(row2, text="Note:", bg="#1e293b", fg="#8b93a5",
                  font=("Segoe UI", 9)).pack(side="left")
-        self.note = tk.Entry(row2, bg="#1c2029", fg="#e8edf5", relief="flat",
-                             insertbackground="#e8edf5", font=("Segoe UI", 9), width=52)
+        self.note = tk.Entry(row2, bg="#1c2029", fg="#e2e8f0", relief="flat",
+                             insertbackground="#e2e8f0", font=("Segoe UI", 9), width=52)
         self.note.pack(side="left", padx=6, ipady=3)
-        tk.Button(row2, text="Next  (Space)", bg="#2f6feb", fg="white", relief="flat",
+        tk.Button(row2, text="Next  (Space)", bg="#3b82f6", fg="white", relief="flat",
                   font=("Segoe UI", 9, "bold"), padx=10, cursor="hand2",
                   command=self._next).pack(side="left", padx=3)
         tk.Button(row2, text="Back", bg="#2a2f3a", fg="#dfe5ef", relief="flat",
@@ -246,7 +246,7 @@ class ScreenTest:
         tk.Button(row2, text="End test (Esc)", bg="#2a2f3a", fg="#dfe5ef", relief="flat",
                   font=("Segoe UI", 9), padx=8, cursor="hand2",
                   command=self._finish).pack(side="left", padx=3)
-        self.counter = tk.Label(self.panel, text="", bg="#111318", fg="#6f7889",
+        self.counter = tk.Label(self.panel, text="", bg="#1e293b", fg="#6f7889",
                                 font=("Segoe UI", 8), anchor="e")
         self.counter.pack(fill="x", padx=14, pady=(0, 6))
 
@@ -601,7 +601,7 @@ def run_touch_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
     cv = tk.Canvas(top, width=w, height=h, bg="#04070c", highlightthickness=0, bd=0)
     cv.pack(fill="both", expand=True)
     tk.Label(top, text="TAP EVERY CIRCLE WITH YOUR FINGER  (a mouse click counts too)",
-             bg="#04070c", fg="#e8edf5", font=("Segoe UI", 20, "bold")).place(
+             bg="#04070c", fg="#e2e8f0", font=("Segoe UI", 20, "bold")).place(
         relx=0.5, y=26, anchor="n")
     targets = [(fx * w, fy * h) for fx in (0.12, 0.5, 0.88) for fy in (0.25, 0.55, 0.85)]
     radius = max(34, min(w, h) // 14)
@@ -612,12 +612,12 @@ def run_touch_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
             hit = i in state["hits"]
             cv.create_oval(x - radius, y - radius, x + radius, y + radius,
                            fill="#123b23" if hit else "#101826",
-                           outline="#5ce08a" if hit else "#2f6feb", width=3)
+                           outline="#5ce08a" if hit else "#3b82f6", width=3)
             if not hit:
-                cv.create_text(x, y, text=str(i + 1), fill="#7c8798",
+                cv.create_text(x, y, text=str(i + 1), fill="#94a3b8",
                                font=("Segoe UI", 16, "bold"))
         cv.create_text(w // 2, h - 34, text="%d / %d targets tapped" % (len(state["hits"]), len(targets)),
-                       fill="#93a0b4", font=("Segoe UI", 13, "bold"))
+                       fill="#94a3b8", font=("Segoe UI", 13, "bold"))
 
     def _finish(cancel: bool = False) -> None:
         if state["done"]:

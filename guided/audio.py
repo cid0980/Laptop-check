@@ -542,7 +542,7 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         tk.Label(box, text="The meter below shows what Windows actually received from the microphone.",
                  bg=COLOURS["panel"], fg=COLOURS["muted"], font=("Segoe UI", 9),
                  anchor="w").pack(fill="x", padx=12, pady=(0, 6))
-        cv = tk.Canvas(box, width=680, height=90, bg="#0b0e13", highlightthickness=0)
+        cv = tk.Canvas(box, width=680, height=90, bg="#0f172a", highlightthickness=0)
         cv.pack(fill="x", padx=12, pady=(0, 6))
         state["canvas"] = cv
         state["dlg"] = dlg
@@ -606,7 +606,7 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
             return
         if not rec.start():
             if d:
-                d.say("Microphone could not be opened: %s" % rec.error, "#ff9d9d")
+                d.say("Microphone could not be opened: %s" % rec.error, "#fca5a5")
             state["open_error"] = rec.error
             return
         state["started"] = True
@@ -626,7 +626,7 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         d = state.get("dlg")
         if not state["started"]:
             if d:
-                d.say("Press START RECORDING first, then press LOOPBACK.", "#ffd479")
+                d.say("Press START RECORDING first, then press LOOPBACK.", "#fcd34d")
             return
         path = (ensure_tones() or {}).get("both")
         if not path:

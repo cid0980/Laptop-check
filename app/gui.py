@@ -43,11 +43,12 @@ from app import uikit
 from app import pdf as pdf_mod
 from app import report as report_mod
 
+from app import theme as T
 C = {
-    "bg": "#0b0f16", "card": "#141b26", "card2": "#1b2432", "line": "#26303f",
-    "text": "#e8edf5", "muted": "#8d99ac", "accent": "#3b82f6",
-    "good": "#22c55e", "warn": "#f59e0b", "bad": "#ef4444",
-    "na": "#64748b", "skip": "#a78bfa",
+    "bg": T.BG, "card": T.SURFACE, "card2": T.RAISED, "line": T.LINE,
+    "text": T.TEXT, "muted": T.MUTED, "accent": T.ACCENT,
+    "good": T.GOOD, "warn": T.OKAY, "bad": T.BAD,
+    "na": T.NA, "skip": T.NA,
 }
 PLAIN = {
     "pass": ("GOOD", C["good"]),
@@ -215,8 +216,10 @@ class Wizard:
                colour: str = C["accent"], fg: str = "white", size: int = 13,
                padx: int = 26, pady: int = 12) -> tk.Button:
         b = tk.Button(parent, text=text, bg=colour, fg=fg, relief="flat", font=_f(size),
-                      padx=padx, pady=pady, cursor="hand2", activebackground=colour,
+                      padx=padx, pady=pady, cursor="hand2",
+                      activebackground=uikit.shade(colour, 0.82),
                       activeforeground=fg, command=cmd)
+        uikit.hoverify(b, colour)
         return b
 
     # ============================================================== welcome
@@ -225,6 +228,7 @@ class Wizard:
         s = self.stage
         mid = tk.Frame(s, bg=C["bg"])
         mid.pack(expand=True)
+        uikit.rise(mid)
         tk.Label(mid, text=APP_NAME.upper(), bg=C["bg"], fg=C["text"],
                  font=_f(52)).pack()
         shop = self.branding.get("shop_name") or ""
@@ -236,7 +240,7 @@ class Wizard:
                      % (ident.get("manufacturer", ""), ident.get("model", ""),
                         ident.get("serial", "?")),
                      bg=C["bg"], fg=C["accent"], font=_f(15, False)).pack(pady=(0, 18))
-        big = self.button(mid, "\u25b6   START INSPECTION", self.begin, C["good"], "#06230f",
+        big = self.button(mid, "\u25b6   START INSPECTION", self.begin, C["accent"], "white",
                           size=26, padx=60, pady=26)
         big.pack(pady=(0, 10))
         ip = self._load_inprogress()
@@ -251,12 +255,18 @@ class Wizard:
                  bg=C["bg"], fg=C["muted"], font=_f(13, False), justify="center").pack()
         row = tk.Frame(s, bg=C["bg"])
         row.pack(side="bottom", pady=22)
-        for text, cmd, col in (("Shop & report settings", self.settings_dialog, C["card2"]),
-                               ("Past inspections", self.history_dialog, C["card2"]),
-                               ("Create debug file for support", self.make_bundle, C["card2"]),
-                               ("Try with demo data", self._load_demo, C["card2"]),
-                               ("Exit", self._exit, C["card2"])):
-            self.button(row, text, cmd, col, C["text"], 11, 16, 8).pack(side="left", padx=6)
+        util = (("Shop & report settings", self.settings_dialog, "settings"),
+                ("Past inspections", self.history_dialog, "clock"),
+                ("Create debug file for support", self.make_bundle, "file-text"),
+                ("Try with demo data", self._load_demo, "help-circle"),
+                ("Exit", self._exit, "x-circle"))
+        for text, cmd, iname in util:
+            b = self.button(row, text, cmd, C["card2"], C["text"], 11, 16, 8)
+            img = uikit.icon(iname, "muted")
+            if img:
+                b.configure(image=img, compound="left")
+                b.image = img
+            b.pack(side="left", padx=6)
         if IS_WINDOWS and not is_admin():
             tk.Label(s, text="Not running as Administrator - some hardware data will be missing. "
                              "Right-click the exe and choose Run as administrator for full detail.",
@@ -481,7 +491,11 @@ class Wizard:
             self.now_label.configure(text="CHECK %d OF %d   -   NOW CHECKING"
                                      % (p.get("index", 0), p.get("total", len(AUTO_IDS))))
             self.now_name.configure(text=CHECK_INDEX[cid][1])
-            self.now_badge.configure(text="working...", fg=C["muted"])
+            self.now_badge.configure(text="working", fg=C["muted"])
+            if not getattr(self, "_pulse_stop", None):
+                self._pulse_stop = {}
+            self._pulse_stop["stop"] = False
+            uikit.pulse_dots(self.now_badge, "working", self._pulse_stop)
             self.now_summary.configure(text="")
             try:
                 self.now_icon_lab.configure(image="")
@@ -492,6 +506,8 @@ class Wizard:
             return
         cid = p["cid"]
         status = p.get("status", "unknown")
+        if getattr(self, "_pulse_stop", None):
+            self._pulse_stop["stop"] = True
         word, colour = PLAIN.get(status, ("...", C["muted"]))
         self.now_badge.configure(text=word, fg=colour)
         _STATUS_ICON = {"pass": ("check-circle", "good"), "warn": ("alert-triangle", "okay"),
@@ -554,6 +570,7 @@ class Wizard:
         done_auto = sum(1 for c in AUTO_IDS if c in self.scan.results)
         mid = tk.Frame(s, bg=C["bg"])
         mid.pack(expand=True)
+        uikit.rise(mid)
         tk.Label(mid, text="AUTOMATIC CHECKS FINISHED", bg=C["bg"], fg=C["good"],
                  font=_f(20)).pack()
         tk.Label(mid, text="%d checks ran by themselves. Now the hands-on tests:\n"
@@ -700,6 +717,7 @@ class Wizard:
         self.clear()
         mid = tk.Frame(self.stage, bg=C["bg"])
         mid.pack(expand=True)
+        uikit.rise(mid)
         tk.Label(mid, text=GUIDED_INFO.get(cid, (cid, ""))[0], bg=C["bg"], fg=C["muted"],
                  font=_f(18)).pack()
         tk.Label(mid, text=word, bg=C["bg"], fg=colour, font=_f(52)).pack(pady=(8, 6))

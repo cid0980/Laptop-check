@@ -89,7 +89,7 @@ def _photo_tag(path: str, caption: str = "") -> str:
 def css(primary: str, accent: str, danger: str, warn: str) -> str:
     return """
 :root{--primary:%(primary)s;--accent:%(accent)s;--danger:%(danger)s;--warn:%(warn)s;
---ink:#0d1117;--ink2:#3d4757;--muted:#6b7688;--line:#e3e8ef;--bg:#f5f7fa;--card:#fff}
+--ink:#0f172a;--ink2:#3d4757;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;--card:#ffffff}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
 font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.45}
@@ -472,16 +472,16 @@ def svg_gauge(score: float, colour: str, size: int = 132) -> str:
             'stroke-linecap="round" stroke-dasharray="%.1f %.1f" '
             'transform="rotate(-90 66 66)"/>'
             '<text x="66" y="63" text-anchor="middle" font-size="30" font-weight="700" '
-            'fill="#e8edf5" font-family="Segoe UI, Arial">%.0f</text>'
-            '<text x="66" y="84" text-anchor="middle" font-size="11" fill="#93a0b4" '
+            'fill="#e2e8f0" font-family="Segoe UI, Arial">%.0f</text>'
+            '<text x="66" y="84" text-anchor="middle" font-size="11" fill="#94a3b8" '
             'font-family="Segoe UI, Arial">health / 100</text></svg>'
             % (size, size, colour, dash, c - dash, float(score or 0)))
 
 
 def svg_stack(counts: Dict[str, int]) -> str:
     """One stacked bar: how the 35 checks ended up, colour per state."""
-    order = (("pass", "#1f9d55"), ("warn", "#c9a227"), ("fail", "#d0453b"),
-             ("na", "#4b5563"), ("skipped", "#7048e8"))
+    order = (("pass", "#10b981"), ("warn", "#f59e0b"), ("fail", "#ef4444"),
+             ("na", "#64748b"), ("skipped", "#64748b"))
     total = max(1, sum(int(counts.get(k, 0) or 0) for k, _ in order))
     x = 0.0
     parts = []
@@ -520,12 +520,12 @@ def svg_waterfall(rows: List[Dict[str, Any]]) -> str:
         amt = r["amount"]
         w = 300.0 * abs(amt) / peak
         y = i * 26 + 4
-        col = "#1f9d55" if amt >= 0 else "#d0453b"
+        col = "#10b981" if amt >= 0 else "#ef4444"
         x = 320.0 if amt >= 0 else 320.0 - w
         out.append('<rect x="%.1f" y="%d" width="%.1f" height="16" rx="3" fill="%s"/>'
                    % (x, y, w, col))
         lab = (r.get("label") or "")[:44]
-        out.append('<text x="4" y="%d" font-size="11" fill="#c9d3e3" '
+        out.append('<text x="4" y="%d" font-size="11" fill="#cbd5e1" '
                    'font-family="Segoe UI, Arial">%s</text>' % (y + 12, _esc_svg(lab)))
         out.append('<text x="636" y="%d" text-anchor="end" font-size="11" fill="%s" '
                    'font-family="Segoe UI, Arial">%s%s</text>'
@@ -541,7 +541,7 @@ def _esc_svg(t: str) -> str:
 
 def svg_chip(status: str) -> str:
     """Tiny severity dot used in the problems list."""
-    col = {"fail": "#d0453b", "warn": "#c9a227"}.get(status, "#93a0b4")
+    col = {"fail": "#ef4444", "warn": "#f59e0b"}.get(status, "#94a3b8")
     return ('<svg width="14" height="14" viewBox="0 0 14 14" style="vertical-align:-2px">'
             '<circle cx="7" cy="7" r="6" fill="%s"/></svg>' % col)
 

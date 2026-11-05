@@ -149,7 +149,7 @@ to PDF from any browser:
 
 ## Building it yourself (developers)
 
-The app is **100 % Python standard library** — tkinter GUI, ctypes Win32 /
+UI theme lives in `app/theme.py` (three theme colours + verdict semantics);\nicons are open-source (Feather ISC, Tabler MIT) pre-rasterised by `tools/make_icons.py`.\n\nThe app is **100 % Python standard library** — tkinter GUI, ctypes Win32 /
 DirectShow / winmm, PowerShell + CIM for hardware data. No OpenCV, no numpy,
 no Pillow, no pywin32.
 

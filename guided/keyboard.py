@@ -627,7 +627,7 @@ class KeyboardTest:
             if label in ("Backspace", "Enter", "Tab", "Caps", "L-Shift", "R-Shift"):
                 width = max(width, 9)
             lab = tk.Label(rows[row], text=label, width=width,
-                           bg=COLOURS["panel"], fg="#7c8798", relief="raised", bd=2,
+                           bg=COLOURS["panel"], fg="#94a3b8", relief="raised", bd=2,
                            font=("Consolas", 9, "bold"), cursor="hand2",
                            highlightthickness=1, highlightbackground=COLOURS["line"])
             lab.pack(side="left", padx=1, ipady=4)
@@ -709,12 +709,12 @@ class KeyboardTest:
             self.res.metric("  Device [%s]" % ("ALLOWED" if d["allowed"] else "REJECTED"),
                             "%s - %s" % (d["name"] or "(no path)", d["reason"]))
         if not ok:
-            self.warn.configure(bg="#2b1d1d",
+            self.warn.configure(bg="#3f1414",
                                 text="INPUT CAPTURE FAILED: %s\nThe keyboard test cannot verify key "
                                      "origins. Any result will be flagged in the report." % self.watcher.error)
         elif external:
             names = ", ".join("%s (%s)" % (e.get("name"), e.get("kind")) for e in external[:3])
-            self.warn.configure(bg="#2b2416",
+            self.warn.configure(bg="#33290a",
                                 text="WARNING - Windows reports external/virtual keyboard(s): %s\n"
                                      "UNPLUG them now. Keys typed on them will be REJECTED and recorded "
                                      "as violations." % names)
@@ -743,7 +743,7 @@ class KeyboardTest:
             # Raw Input never arrived although real keys were pressed: something
             # on this machine swallows WM_INPUT. Fall back to hook counting.
             if self.watcher.enable_hook_mode():
-                self.warn.configure(bg="#2b2416",
+                self.warn.configure(bg="#33290a",
                     text="RAW INPUT IS BLOCKED ON THIS PC - keys are being counted through the "
                          "verified low-level hook instead (exactly one built-in keyboard found).")
                 if self.emit:
@@ -753,17 +753,17 @@ class KeyboardTest:
         total_req = 0
         for vk, label, row, required in KEYMAP:
             if self.missing.get(vk):
-                self._paint(vk, "#3b2f18", "#e0b25c")
+                self._paint(vk, "#33290a", "#fcd34d")
                 continue
             info = pressed.get(vk)
             if info and info["ok"]:
-                self._paint(vk, "#123b23", "#5ce08a")
+                self._paint(vk, "#062e26", "#34d399")
                 if required:
                     done += 1
             elif info and not info["ok"]:
-                self._paint(vk, "#3b1414", "#ff8f86")
+                self._paint(vk, "#3f1414", "#fca5a5")
             else:
-                self._paint(vk, COLOURS["panel"], "#7c8798")
+                self._paint(vk, COLOURS["panel"], "#94a3b8")
             if required:
                 total_req += 1
         vios = self.watcher.snapshot_violations()
@@ -771,7 +771,7 @@ class KeyboardTest:
             new = vios[self.violation_count:]
             self.violation_count = len(vios)
             for v in new[-3:]:
-                self.warn.configure(bg="#2b1d1d",
+                self.warn.configure(bg="#3f1414",
                                     text="REJECTED: '%s' came from %s (%s)"
                                          % (v["label"], v["device"][:60], v["reason"]))
                 if self.emit:
@@ -791,7 +791,7 @@ class KeyboardTest:
     def mark_absent(self, vk: int, label: str) -> None:
         self.missing[vk] = not self.missing.get(vk, False)
         if self.missing[vk]:
-            self._paint(vk, "#3b2f18", "#e0b25c")
+            self._paint(vk, "#33290a", "#fcd34d")
             if self.emit:
                 self.emit("Key '%s' marked as not present on this keyboard" % label)
 
@@ -801,7 +801,7 @@ class KeyboardTest:
         self.missing.clear()
         self.violation_count = 0
         for vk in self.labels:
-            self._paint(vk, COLOURS["panel"], "#7c8798")
+            self._paint(vk, COLOURS["panel"], "#94a3b8")
 
     def _finish(self) -> None:
         try:
