@@ -524,8 +524,7 @@ class Wizard:
         self.now_name.configure(text=CHECK_INDEX[cid][1])
         try:
             frac = p.get("index", 0) / max(1, p.get("total", 1))
-            self.bar.update_idletasks()
-            self.bar_fill.place(relheight=1.0, relwidth=max(0.004, frac))
+            self._ease_bar(frac)
             try:
                 self.auto_pct.configure(text="%d%%" % round(frac * 100))
                 self.auto_count.configure(text="%d / %d"
@@ -850,6 +849,29 @@ class Wizard:
             side="left", padx=5)
         threading.Thread(target=self._export_thread, daemon=True).start()
 
+    def _ease_bar(self, target: float) -> None:
+        """Ease the auto progress fill toward target (feels alive, not jumpy)."""
+        start = getattr(self, "_bar_cur", 0.0)
+        steps = 10
+        def step(i: int) -> None:
+            try:
+                if not self.bar_fill.winfo_exists():
+                    return
+                t = (i + 1) / steps
+                e = 1 - (1 - t) ** 2
+                v = start + (target - start) * e
+                self._bar_cur = v
+                self.bar_fill.place(relheight=1.0, relwidth=max(0.004, v))
+                if i + 1 < steps:
+                    self.root.after(22, lambda: step(i + 1))
+            except Exception:
+                pass
+        try:
+            self.bar.update_idletasks()
+            step(0)
+        except Exception:
+            pass
+
     def _export_progress(self, frac: float, caption: str) -> None:
         try:
             self.root.after(0, lambda: self.export_bar.set(frac, caption)
@@ -972,7 +994,7 @@ class Wizard:
         sw, sh = top.winfo_screenwidth(), top.winfo_screenheight()
         top.geometry("%dx%d+%d+%d" % (min(1000, sw - 60), min(760, sh - 60), 30, 20))
         top.attributes("-topmost", True)
-        txt = tk.Text(top, bg="#0d1219", fg="#cfd8e6", relief="flat", font=("Consolas", 10),
+        txt = tk.Text(top, bg=C["bg"], fg=C["text"], relief="flat", font=("Consolas", 10),
                       wrap="word", padx=14, pady=12)
         txt.pack(fill="both", expand=True, padx=10, pady=10)
         lines = []

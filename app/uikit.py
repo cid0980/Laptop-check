@@ -199,11 +199,12 @@ def state_card(parent: tk.Misc, icon_name: str, colour: str, title: str,
                  font=("Segoe UI", 11), anchor="w", wraplength=820,
                  justify="left").pack(fill="x", pady=(3, 0))
     if action_text and action_cmd is not None:
-        tk.Button(right, text=action_text, bg="#3b82f6", fg="white",
-                  relief="flat", font=("Segoe UI", 11, "bold"), padx=16,
-                  pady=6, cursor="hand2", activebackground="#3b82f6",
-                  activeforeground="white", command=action_cmd).pack(
-            anchor="w", pady=(10, 0))
+        ab = tk.Button(right, text=action_text, bg="#3b82f6", fg="white",
+                       relief="flat", font=("Segoe UI", 11, "bold"), padx=16,
+                       pady=6, cursor="hand2", activebackground=shade("#3b82f6", 0.82),
+                       activeforeground="white", command=action_cmd)
+        hoverify(ab, "#3b82f6")
+        ab.pack(anchor="w", pady=(10, 0))
     return card
 
 

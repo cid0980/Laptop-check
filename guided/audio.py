@@ -577,7 +577,7 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
             cv.create_rectangle(x0, h - 16 - bh, x0 + bw, h - 16, fill=colour, outline="")
         if levels:
             best = max(lv["peak_db"] for lv in levels)
-            cv.create_text(w - 8, h - 8, anchor="se", fill="#cfd8e6", font=("Segoe UI", 9, "bold"),
+            cv.create_text(w - 8, h - 8, anchor="se", fill="#e2e8f0", font=("Segoe UI", 9, "bold"),
                            text="peak %.1f dB" % best)
 
     def tick() -> None:
