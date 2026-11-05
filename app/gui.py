@@ -718,12 +718,20 @@ class Wizard:
         mid = tk.Frame(self.stage, bg=C["bg"])
         mid.pack(expand=True)
         uikit.rise(mid)
+        iname = {"passed": "check-circle", "warning": "alert-triangle",
+                 "failed": "x-circle"}.get(word, "minus-circle")
+        ckey = {"passed": "good", "warning": "okay",
+                "failed": "bad"}.get(word, "muted")
+        img = uikit.icon(iname, ckey)
+        if img:
+            tk.Label(mid, image=img, bg=C["bg"]).pack(pady=(0, 10))
+            mid.icon_ref = img
         tk.Label(mid, text=GUIDED_INFO.get(cid, (cid, ""))[0], bg=C["bg"], fg=C["muted"],
                  font=_f(18)).pack()
         tk.Label(mid, text=word, bg=C["bg"], fg=colour, font=_f(52)).pack(pady=(8, 6))
         tk.Label(mid, text=summary or "", bg=C["bg"], fg=C["text"], font=_f(16, False),
                  wraplength=950, justify="center").pack()
-        self.later(1500, self._guided_step)
+        self.later(1800, self._guided_step)
 
     def _pending_and_flags(self):
         pending = [name for cid, name, _g, _w, _t in CHECKS
