@@ -262,9 +262,12 @@ def rise(widget: tk.Misc, start: int = 18, steps: int = 7, delay: int = 16) -> N
 def pulse_dots(label: tk.Label, base_text: str, stop_flag: Dict[str, bool],
                delay: int = 380) -> None:
     """'working' -> 'working.' -> 'working..' ... until stop_flag['stop']."""
+    gen = stop_flag.get("gen", 0) + 1
+    stop_flag["gen"] = gen
     def tick(n: int) -> None:
         try:
-            if stop_flag.get("stop") or not label.winfo_exists():
+            if stop_flag.get("stop") or stop_flag.get("gen") != gen \
+                    or not label.winfo_exists():
                 return
             label.configure(text=base_text + "." * (n % 4))
             label.after(delay, lambda: tick(n + 1))

@@ -55,7 +55,7 @@ def get_state() -> dict:
         vol = _endpoint_volume()
         if not vol:
             return out
-        out["muted"] = bool(com_call(vol, 15, (), restype=ctypes.c_int))
+        out["muted"] = bool(com_call(vol, 14, (), restype=ctypes.c_int))
         out["level"] = round(com_call(vol, 9, (), restype=ctypes.c_float), 2)
     except Exception:
         pass
@@ -73,11 +73,11 @@ def ensure_audible(level: float = 0.65) -> str:
         before = get_state()
         changed = []
         if before["muted"]:
-            com_call(vol, 14, (ctypes.c_int, ctypes.c_void_p), 0, None)
+            com_call(vol, 15, (ctypes.c_int, ctypes.c_void_p), 0, None)
             changed.append("unmuted the Windows output")
         cur = before["level"]
         if cur is not None and cur < level - 0.05:
-            com_call(vol, 7, (ctypes.c_float, ctypes.c_void_p), level, None)
+            com_call(vol, 8, (ctypes.c_float, ctypes.c_void_p), level, None)
             changed.append("raised the master volume from %d%% to %d%%"
                            % (round(cur * 100), round(level * 100)))
         if changed:

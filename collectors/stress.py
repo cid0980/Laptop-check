@@ -24,7 +24,6 @@ RAM TEST
 from __future__ import annotations
 
 import base64
-import os
 import random
 import subprocess
 import threading
@@ -444,7 +443,6 @@ def check_memory_test(res: CheckResult, ctx: Dict[str, Any]) -> None:
             say("RAM test pass %d/%d: pseudo-random data..." % (p + 1, passes))
             reps = block // len(rand_block) + 1
             buf[:] = (rand_block * reps)[:block]
-            rcrc = zlib.crc32(buf) & 0xFFFFFFFF
             checked += block
             # re-verify every stored pattern checksum by rewriting it
             for byte, crc in stored:
