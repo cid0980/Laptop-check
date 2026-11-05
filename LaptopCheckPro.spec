@@ -51,7 +51,7 @@ a = Analysis(
     ['run.py'],
     pathex=[os.path.abspath('.')],
     binaries=[],
-    datas=[],
+    datas=[('assets/icons', 'assets/icons')],
     hiddenimports=[
         'app', 'app.core', 'app.png', 'app.dshow', 'app.qr', 'app.grading',
         'app.valuation', 'app.branding', 'app.scan', 'app.report', 'app.demo',

@@ -125,6 +125,22 @@ class ScreenTest:
     def run(self) -> CheckResult:
         self.master.withdraw()
         prevent_sleep(True)
+        orig_bright = None
+        try:
+            from app.core import run_ps
+            rc, out, _e = run_ps("(Get-WmiObject -Namespace root/wmi -Class "
+                                 "WmiMonitorBrightness -ErrorAction SilentlyContinue)"
+                                 ".CurrentBrightness", timeout=15)
+            try:
+                orig_bright = int(str(out).strip())
+            except Exception:
+                orig_bright = None
+            # dead pixels hide in a dim panel: the tool sets full brightness itself
+            run_ps("(Get-WmiObject -Namespace root/wmi -Class "
+                   "WmiMonitorBrightnessMethods -ErrorAction SilentlyContinue)"
+                   ".WmiSetBrightness(1,100)", timeout=15)
+        except Exception:
+            pass
         self.top = tk.Toplevel(self.master)
         self.top.configure(bg="black", cursor="none")
         # Bullet-proof fullscreen. "-fullscreen" silently does nothing on some
@@ -160,6 +176,14 @@ class ScreenTest:
         self._show_screen()
         self.master.wait_window(self.top)
 
+        if orig_bright is not None:
+            try:
+                from app.core import run_ps
+                run_ps("(Get-WmiObject -Namespace root/wmi -Class "
+                       "WmiMonitorBrightnessMethods -ErrorAction SilentlyContinue)"
+                       ".WmiSetBrightness(1,%d)" % orig_bright, timeout=15)
+            except Exception:
+                pass
         prevent_sleep(False)
         self.master.deiconify()
         self.master.lift()

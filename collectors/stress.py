@@ -33,6 +33,7 @@ import zlib
 from typing import Any, Callable, Dict, List, Optional
 
 from app.core import (
+    run_cmd,
     CheckResult, IS_WINDOWS, _popen_kwargs, get, kelvin_to_c, powershell_exe,
     run_ps, safe_check,
 )
@@ -198,7 +199,39 @@ def check_cpu_stress(res: CheckResult, ctx: Dict[str, Any]) -> None:
         if emit:
             emit(msg)
 
+    # a power-saver plan throttles the CPU and would fake a throttle fault:
+    # the tool switches to high performance itself and restores the old plan
+    plan_before = ""
+    try:
+        import re as _re
+        _rc, _out, _er = run_cmd("powercfg /getactivescheme", timeout=15)
+        _m = _re.search(r"([0-9a-fA-F]{8}-[0-9a-fA-F-]{27})", _out or "")
+        plan_before = _m.group(1) if _m else ""
+        run_cmd("powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c", timeout=15)
+        if plan_before and plan_before.lower() != "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c":
+            res.note("The tool temporarily switched Windows to the high-performance power "
+                     "plan for this burn test and restored '%s' afterwards." % plan_before[:8])
+    except Exception:
+        pass
+
+    def _restore_plan() -> None:
+        if plan_before:
+            try:
+                run_cmd("powercfg /setactive %s" % plan_before, timeout=15)
+            except Exception:
+                pass
+
     say("CPU stress test: starting %d worker thread(s) for %d second(s)..." % (cores, seconds))
+    try:
+        return _stress_body(res, ctx, cores, seconds, say, plan_before, _restore_plan)
+    finally:
+        _restore_plan()
+
+
+def _stress_body(res: CheckResult, ctx: Dict[str, Any], cores: int, seconds: int,
+                 say: Callable[[str], None], plan_before: str,
+                 _restore_plan: Callable[[], None]) -> None:
+    cpu = ctx.get("cpu") or {}
     t0, t1 = read_temperatures()
     res.metric("Threads used", cores)
     res.metric("Test length", "%d seconds" % seconds)

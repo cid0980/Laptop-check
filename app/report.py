@@ -420,6 +420,7 @@ def _verdict(scan: Scan, mode: str) -> str:
     return """
 <div class="card">
   <div class="verdict">
+    <div style="margin-right:18px">%(gauge)s</div>
     <div class="gradebox" style="background:%(colour)s">
       <div class="g">%(grade)s</div>
       <div class="s">%(score)s / 100</div>
@@ -433,6 +434,7 @@ def _verdict(scan: Scan, mode: str) -> str:
         %(failn)d failed &nbsp;&middot;&nbsp; %(nan)d not fitted &nbsp;&middot;&nbsp;
         %(skipn)d not tested
       </div>
+      %(stack)s
       <div class="small muted" style="margin-top:6px">
         Inspection completeness <b>%(comp)s%%</b> &nbsp;&middot;&nbsp;
         %(items)d scored checks &nbsp;&middot;&nbsp;
@@ -448,7 +450,100 @@ def _verdict(scan: Scan, mode: str) -> str:
        "passn": counts["pass"], "warnn": counts["warn"], "failn": counts["fail"],
        "nan": counts["na"], "skipn": counts.get("skipped", 0) + counts.get("missing", 0),
        "comp": (g.get("completeness", 0)), "items": g.get("scored_items", 0),
-       "w11": esc(scan.ctx.get("w11_label", "")), "price": price_html}
+       "w11": esc(scan.ctx.get("w11_label", "")), "price": price_html,
+       "gauge": svg_gauge(g.get("score", 0), colour),
+       "stack": svg_stack(counts)}
+
+
+
+# --------------------------------------------------------------------------
+# inline SVG diagrams (print perfectly in the PDF, no external assets)
+# --------------------------------------------------------------------------
+def svg_gauge(score: float, colour: str, size: int = 132) -> str:
+    """Donut gauge for the overall health score."""
+    import math
+    frac = max(0.0, min(100.0, float(score or 0))) / 100.0
+    r = 54.0
+    c = 2 * math.pi * r
+    dash = c * frac
+    return ('<svg width="%d" height="%d" viewBox="0 0 132 132" role="img">'
+            '<circle cx="66" cy="66" r="54" fill="none" stroke="#232a36" stroke-width="14"/>'
+            '<circle cx="66" cy="66" r="54" fill="none" stroke="%s" stroke-width="14" '
+            'stroke-linecap="round" stroke-dasharray="%.1f %.1f" '
+            'transform="rotate(-90 66 66)"/>'
+            '<text x="66" y="63" text-anchor="middle" font-size="30" font-weight="700" '
+            'fill="#e8edf5" font-family="Segoe UI, Arial">%.0f</text>'
+            '<text x="66" y="84" text-anchor="middle" font-size="11" fill="#93a0b4" '
+            'font-family="Segoe UI, Arial">health / 100</text></svg>'
+            % (size, size, colour, dash, c - dash, float(score or 0)))
+
+
+def svg_stack(counts: Dict[str, int]) -> str:
+    """One stacked bar: how the 35 checks ended up, colour per state."""
+    order = (("pass", "#1f9d55"), ("warn", "#c9a227"), ("fail", "#d0453b"),
+             ("na", "#4b5563"), ("skipped", "#7048e8"))
+    total = max(1, sum(int(counts.get(k, 0) or 0) for k, _ in order))
+    x = 0.0
+    parts = []
+    for key, col in order:
+        n = int(counts.get(key, 0) or 0)
+        if not n:
+            continue
+        w = 600.0 * n / total
+        parts.append('<rect x="%.1f" y="0" width="%.1f" height="18" rx="4" fill="%s"/>'
+                     % (x, w, col))
+        x += w
+    legend = "".join(
+        '<span style="margin-right:14px"><span style="display:inline-block;width:10px;'
+        'height:10px;border-radius:3px;background:%s;margin-right:5px"></span>%s %d</span>'
+        % (col, key, int(counts.get(key, 0) or 0)) for key, col in order)
+    return ('<div style="margin:10px 0"><svg width="600" height="18" viewBox="0 0 600 18">'
+            '<rect x="0" y="0" width="600" height="18" rx="4" fill="#1a2029"/>%s</svg>'
+            '<div class="small muted" style="margin-top:6px">%s</div></div>'
+            % ("".join(parts), legend))
+
+
+def svg_waterfall(rows: List[Dict[str, Any]]) -> str:
+    """Plus/minus bars for the biggest price factors (top 8 by |amount|)."""
+    nums = [r for r in rows if r.get("kind") not in ("mult", "pct")
+            and isinstance(r.get("amount"), (int, float)) and r.get("amount")]
+    nums.sort(key=lambda r: -abs(r["amount"]))
+    nums = nums[:8]
+    if not nums:
+        return ""
+    peak = max(abs(r["amount"]) for r in nums) or 1
+    out = ['<svg width="640" height="%d" viewBox="0 0 640 %d" role="img">'
+           % (len(nums) * 26 + 8, len(nums) * 26 + 8),
+           '<line x1="320" y1="0" x2="320" y2="%d" stroke="#39424f" stroke-width="1"/>'
+           % (len(nums) * 26 + 8)]
+    for i, r in enumerate(nums):
+        amt = r["amount"]
+        w = 300.0 * abs(amt) / peak
+        y = i * 26 + 4
+        col = "#1f9d55" if amt >= 0 else "#d0453b"
+        x = 320.0 if amt >= 0 else 320.0 - w
+        out.append('<rect x="%.1f" y="%d" width="%.1f" height="16" rx="3" fill="%s"/>'
+                   % (x, y, w, col))
+        lab = (r.get("label") or "")[:44]
+        out.append('<text x="4" y="%d" font-size="11" fill="#c9d3e3" '
+                   'font-family="Segoe UI, Arial">%s</text>' % (y + 12, _esc_svg(lab)))
+        out.append('<text x="636" y="%d" text-anchor="end" font-size="11" fill="%s" '
+                   'font-family="Segoe UI, Arial">%s%s</text>'
+                   % (y + 12, col, "+" if amt >= 0 else "-",
+                      _esc_svg(fmt_inr(abs(amt)))))
+    out.append("</svg>")
+    return '<div style="margin:12px 0">%s</div>' % "".join(out)
+
+
+def _esc_svg(t: str) -> str:
+    return (str(t).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def svg_chip(status: str) -> str:
+    """Tiny severity dot used in the problems list."""
+    col = {"fail": "#d0453b", "warn": "#c9a227"}.get(status, "#93a0b4")
+    return ('<svg width="14" height="14" viewBox="0 0 14 14" style="vertical-align:-2px">'
+            '<circle cx="7" cy="7" r="6" fill="%s"/></svg>' % col)
 
 
 def _specs(scan: Scan) -> str:
@@ -673,6 +768,7 @@ def _valuation(scan: Scan, mode: str) -> str:
     return """
 <div class="card">
  <h2>How we arrived at the price</h2>
+ %(wf)s
  <div class="small muted" style="margin-bottom:8px">Valuation model %(mv)s &mdash; seeded from Indian
  used-laptop market prices. Edit <b>pricing.json</b> next to the .exe to match your own street prices;
  nothing has to be rebuilt.</div>
@@ -687,6 +783,7 @@ def _valuation(scan: Scan, mode: str) -> str:
    <tr><td class="k">Estimated cost of the repairs listed below</td><td class="money">%(rep)s</td></tr>
  </table>
 </div>""" % {"mv": esc(v.get("model_version", "?")), "rows": "".join(rows),
+             "wf": svg_waterfall(v.get("rows") or []),
              "sub": fmt_inr(v.get("subtotal")), "gr": esc(v.get("grade", "?")),
              "cm": v.get("condition_multiplier", 1), "sugg": fmt_inr(v.get("suggested")),
              "low": fmt_inr(v.get("low")), "high": fmt_inr(v.get("high")),

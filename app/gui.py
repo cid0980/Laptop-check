@@ -39,6 +39,7 @@ from app.grading import grade_all
 from app.scan import Scan, list_history
 from app.valuation import estimate, load_model
 from app import debug
+from app import uikit
 from app import pdf as pdf_mod
 from app import report as report_mod
 
@@ -163,7 +164,22 @@ class Wizard:
         else:
             self.drawer_text.configure(state="normal")
             self.drawer_text.delete("1.0", "end")
-            self.drawer_text.insert("1.0", "\n".join(self.log_lines[-200:]))
+            self.drawer_text.configure(state="normal")
+            self.drawer_text.delete("1.0", "end")
+            self.drawer_text.tag_configure("err", foreground="#ff8f86")
+            self.drawer_text.tag_configure("warn", foreground="#ffd479")
+            self.drawer_text.tag_configure("ok", foreground="#7ce8a5")
+            for ln in self.log_lines[-200:]:
+                u = ln.upper()
+                tag = ""
+                if any(k in u for k in ("ERROR", "FAILED", "CRASH", "EXCEPTION", "VIOLATION")):
+                    tag = "err"
+                elif any(k in ln for k in ("Auto-fix", "WARN", "fix:")):
+                    tag = "warn"
+                elif any(k in u for k in ("READY", "WROTE", "OK", "PASS")):
+                    tag = "ok"
+                self.drawer_text.insert("end", ln + "\n", tag)
+            self.drawer_text.see("end")
             self.drawer_text.configure(state="disabled")
             self.drawer.pack(fill="both", expand=True)
 
@@ -309,6 +325,15 @@ class Wizard:
 
     # ================================================================== auto
     def begin(self) -> None:
+        if getattr(self, "_begin_busy", False):
+            return
+        self._begin_busy = True
+        try:
+            self._begin_inner()
+        finally:
+            self._begin_busy = False
+
+    def _begin_inner(self) -> None:
         if not IS_WINDOWS:
             if messagebox.askyesno(APP_NAME, "This is not Windows, so no real hardware can be "
                                              "read.\nLoad the DEMO inspection instead?"):
@@ -332,6 +357,9 @@ class Wizard:
         self.auto_count = tk.Label(row0, text="0 / %d" % len(AUTO_IDS), bg=C["bg"],
                                    fg=C["text"], font=_f(15))
         self.auto_count.pack(side="right")
+        self.auto_pct = tk.Label(row0, text="0%", bg=C["bg"], fg=C["accent"],
+                                 font=_f(15))
+        self.auto_pct.pack(side="right", padx=(0, 16))
         self.bar = tk.Frame(top, bg=C["card2"], height=10)
         self.bar.pack(fill="x", pady=(10, 0))
         self.bar_fill = tk.Frame(self.bar, bg=C["accent"], width=0, height=10)
@@ -345,6 +373,8 @@ class Wizard:
         self.now_name = tk.Label(card, text="", bg=C["card"], fg=C["text"], font=_f(40),
                                  wraplength=1100, justify="center")
         self.now_name.pack(pady=(0, 10))
+        self.now_icon_lab = tk.Label(card, text="", bg=C["card"])
+        self.now_icon_lab.pack(pady=(6, 0))
         self.now_badge = tk.Label(card, text="", bg=C["card"], fg=C["muted"], font=_f(46))
         self.now_badge.pack(pady=(6, 6))
         self.now_summary = tk.Label(card, text="", bg=C["card"], fg=C["text"], font=_f(17, False),
@@ -453,6 +483,10 @@ class Wizard:
             self.now_name.configure(text=CHECK_INDEX[cid][1])
             self.now_badge.configure(text="working...", fg=C["muted"])
             self.now_summary.configure(text="")
+            try:
+                self.now_icon_lab.configure(image="")
+            except Exception:
+                pass
             return
         if not getattr(self, "now_badge", None) or not self.now_badge.winfo_exists():
             return
@@ -460,6 +494,14 @@ class Wizard:
         status = p.get("status", "unknown")
         word, colour = PLAIN.get(status, ("...", C["muted"]))
         self.now_badge.configure(text=word, fg=colour)
+        _STATUS_ICON = {"pass": ("check-circle", "good"), "warn": ("alert-triangle", "okay"),
+                        "fail": ("x-circle", "bad"), "na": ("minus-circle", "muted"),
+                        "skipped": ("slash", "muted")}
+        iname, icol = _STATUS_ICON.get(status, ("help-circle", "muted"))
+        img = uikit.icon(iname, icol)
+        if img:
+            self.now_icon_lab.configure(image=img)
+            self.now_icon_lab.image = img
         self.now_summary.configure(text=p.get("summary", "") or "")
         self.now_label.configure(text="CHECK %d OF %d   -   RESULT"
                                  % (p.get("index", 0), p.get("total", len(AUTO_IDS))))
@@ -468,6 +510,12 @@ class Wizard:
             frac = p.get("index", 0) / max(1, p.get("total", 1))
             self.bar.update_idletasks()
             self.bar_fill.place(relheight=1.0, relwidth=max(0.004, frac))
+            try:
+                self.auto_pct.configure(text="%d%%" % round(frac * 100))
+                self.auto_count.configure(text="%d / %d"
+                                          % (p.get("index", 0), p.get("total", len(AUTO_IDS))))
+            except Exception:
+                pass
         except Exception:
             pass
         self.auto_count.configure(text="%d / %d" % (p.get("index", 0),
@@ -750,6 +798,9 @@ class Wizard:
         self.pdf_label = tk.Label(mid, text="Writing report and PDF...", bg=C["bg"],
                                   fg=C["muted"], font=_f(14, False), anchor="w")
         self.pdf_label.pack(anchor="w", pady=(14, 0))
+        self.export_bar = uikit.ProgressBar(s, width=980, height=22,
+                                            caption="Building the report and PDFs...")
+        self.export_bar.pack(pady=(10, 0))
 
         row = tk.Frame(s, bg=C["bg"])
         row.pack(side="bottom", pady=26)
@@ -770,22 +821,43 @@ class Wizard:
             side="left", padx=6)
         threading.Thread(target=self._export_thread, daemon=True).start()
 
+    def _export_progress(self, frac: float, caption: str) -> None:
+        try:
+            self.root.after(0, lambda: self.export_bar.set(frac, caption)
+                            if getattr(self, "export_bar", None)
+                            and self.export_bar.winfo_exists() else None)
+        except Exception:
+            pass
+
     def _export_thread(self) -> None:
         paths: Dict[str, str] = {}
         try:
             paths = report_mod.write_reports(self.scan, self.branding, folder=REPORTS_DIR)
         except Exception as exc:
             self._log("report write failed: %s" % exc)
+        self._export_progress(0.30, "Report pages built - printing PDFs (two at once)...")
         pdfs: Dict[str, str] = {}
-        for key, tag in (("internal", "report"), ("customer", "customer")):
+        jobs = []
+        lock = threading.Lock()
+
+        def one_pdf(key: str, tag: str, frac: float) -> None:
             html = paths.get(key)
             if not html:
-                continue
+                return
             out = os.path.splitext(html)[0] + ("_customer.pdf" if tag == "customer" else ".pdf")
             ok = pdf_mod.html_to_pdf(html, out)
             if ok:
-                pdfs[tag] = out
+                with lock:
+                    pdfs[tag] = out
             self._log("pdf %s: %s" % (tag, "ok" if ok else "FAILED"))
+            self._export_progress(frac, "PDF %s printed" % tag)
+        for key, tag, frac in (("internal", "report", 0.62), ("customer", "customer", 0.88)):
+            t = threading.Thread(target=one_pdf, args=(key, tag, frac), daemon=True)
+            jobs.append(t)
+            t.start()
+        for t in jobs:
+            t.join()
+        self._export_progress(1.0, "Report and both PDFs are ready below.")
         self.pdf_paths = pdfs
         self.report_paths = paths
         try:
@@ -817,18 +889,18 @@ class Wizard:
 
     def make_bundle(self) -> None:
         """Pack everything the developer needs into one zip the shop sends."""
+        ov = uikit.BusyOverlay(self.root, "Collecting debug information",
+                               "hardware answers, session log, error traces - one zip file",
+                               icon_name="file-text")
         try:
-            self.clear()
-            mid = tk.Frame(self.stage, bg=C["bg"])
-            mid.pack(expand=True)
-            tk.Label(mid, text="Collecting debug information...", bg=C["bg"],
-                     fg=C["text"], font=_f(22)).pack()
             self.root.update_idletasks()
             self.root.update()
             path = debug.bundle(results=debug.results_dump(self.scan.results))
         except Exception as exc:
             debug.exception("make_bundle", exc)
             path = ""
+        finally:
+            ov.close()
         if path:
             messagebox.showinfo(APP_NAME, "Debug file ready:\n\n%s\n\nSend this one file "
                                           "(WhatsApp, mail, anything). It contains no customer "
@@ -960,6 +1032,14 @@ class Wizard:
             tree.heading(c, text=c.replace("_", " ").title())
             tree.column(c, width=w, anchor="w")
         tree.pack(fill="both", expand=True, padx=14, pady=10)
+        if not list_history():
+            tree.pack_forget()
+            uikit.state_card(top, "clock", "muted", "No inspections yet",
+                             "Every finished inspection appears here with its grade, price "
+                             "and a one-click link to its report and PDF.",
+                             "Close", top.destroy).pack(fill="both", expand=True,
+                                                        padx=30, pady=30)
+            return
         index: Dict[str, Dict[str, Any]] = {}
         for item in list_history():
             iid = tree.insert("", "end", values=(item["scan_id"], item["date"], item["machine"],

@@ -398,6 +398,13 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         res.note(fix_note)
     if max_out_volume():
         res.note("The tool set the playback stream volume to 100% for this test.")
+    try:
+        from app import audiovol
+        vol_note = audiovol.ensure_audible()
+        if vol_note:
+            res.note(vol_note)
+    except Exception:
+        pass
     tones = ensure_tones()
     if not tones:
         res.skipped("Could not generate the test tones")
