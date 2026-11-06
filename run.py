@@ -169,24 +169,52 @@ def cmd_selftest(outdir: str = "") -> int:
         # 6. regression gate: the real shop-PC probe (tests/fixture_shop_pc_raw.json)
         #    must produce the verdicts we verified by hand. This is what catches
         #    bugs like "Get-Service enums compared as words" before a release.
-        fix_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "tests", "fixture_shop_pc_raw.json")
-        if os.path.exists(fix_path):
+        fixtures = [
+            ("fixture_shop_pc_raw.json",
+             {"wifi": "pass", "audio_dev": "pass", "bluetooth": "warn",
+              "ethernet": "pass", "biometric": "pass",
+              "privacy_leftovers": "pass"}, None),
+            # second real machine: Lenovo X1 Carbon, BT driver missing,
+            # BitLocker off, previous-owner data present (bundle 2026-11-06)
+            ("fixture_lenovo_pf11y309_raw.json",
+             {"identity": "pass", "os_license": "pass", "bios_tpm": "pass",
+              "cpu": "pass", "memory": "pass", "storage": "pass", "gpu": "pass",
+              "display": "pass", "wifi": "pass", "bluetooth": "warn",
+              "ethernet": "pass", "battery": "warn", "charger": "pass",
+              "ports": "pass", "audio_dev": "pass", "camera_dev": "pass",
+              "input_dev": "pass", "biometric": "pass",
+              "privacy_leftovers": "fail", "events": "warn"}, "ctx"),
+        ]
+        for fname, expect, ctxmode in fixtures:
+            fix_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "tests", fname)
+            if not os.path.exists(fix_path):
+                continue
             from app.core import CheckResult
             from collectors import components as _comp
-            raw = json.load(open(fix_path, "r", encoding="utf-8"))
-            fctx = {"raw": raw,
-                    "wlan_interface": {"present": True, "state": "connected",
-                                       "ssid": "FixtureNet", "signal_percent": 70},
-                    "wlan_driver": {"has_wifi_driver": True, "driver": "x",
-                                    "radio_types": ["802.11ac"]},
-                    "input": {"internal_keyboards": ["k"], "touchpads": ["t"],
-                              "ext_mice": []},
-                    "audio": {"speakers": 1, "mics": 1, "speaker_names": ["S"],
-                              "mic_names": ["M"]}}
-            expect = {"wifi": "pass", "audio_dev": "pass", "bluetooth": "warn",
-                      "ethernet": "pass", "biometric": "pass",
-                      "privacy_leftovers": "pass"}
+            blob = json.load(open(fix_path, "r", encoding="utf-8"))
+            if ctxmode == "ctx":
+                raw = blob["raw"]
+                fctx = dict(blob.get("ctx") or {})
+                fctx.setdefault("wlan_interface", {"present": True, "state": "connected",
+                                                   "ssid": "FixtureNet", "signal_percent": 70})
+                fctx.setdefault("wlan_driver", {"has_wifi_driver": True, "driver": "x",
+                                                "radio_types": ["802.11ac"]})
+                fctx.setdefault("input", {"internal_keyboards": ["k"], "touchpads": ["t"],
+                                          "ext_mice": []})
+                fctx.setdefault("audio", {"speakers": 1, "mics": 1,
+                                          "speaker_names": ["S"], "mic_names": ["M"]})
+            else:
+                raw = blob
+                fctx = {"wlan_interface": {"present": True, "state": "connected",
+                                           "ssid": "FixtureNet", "signal_percent": 70},
+                        "wlan_driver": {"has_wifi_driver": True, "driver": "x",
+                                        "radio_types": ["802.11ac"]},
+                        "input": {"internal_keyboards": ["k"], "touchpads": ["t"],
+                                  "ext_mice": []},
+                        "audio": {"speakers": 1, "mics": 1, "speaker_names": ["S"],
+                                  "mic_names": ["M"]}}
+            fctx["raw"] = raw
             for cid, want in expect.items():
                 fn = _comp.REGISTRY.get(cid)
                 if fn is None:
@@ -195,8 +223,8 @@ def cmd_selftest(outdir: str = "") -> int:
                 r = CheckResult(cid, cid, "fixture")
                 fn(r, fctx)
                 if r.status != want:
-                    problems.append("fixture regression: %s = %s (want %s)"
-                                    % (cid, r.status, want))
+                    problems.append("fixture regression: %s %s = %s (want %s)"
+                                    % (fname[:12], cid, r.status, want))
             if _comp._svc_state(4) != "Running" or _comp._svc_state("Stopped") != "Stopped":
                 problems.append("fixture regression: service-state decoder broken")
 

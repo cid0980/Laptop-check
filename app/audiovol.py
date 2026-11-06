@@ -23,16 +23,18 @@ if IS_WINDOWS:
 _STATE = {"vol": 0, "note": ""}
 
 
-def _endpoint_volume() -> Optional[int]:
-    if _STATE["vol"]:
-        return _STATE["vol"]
+def _endpoint_volume(flow: int = 0) -> Optional[int]:
+    key = "vol" if flow == 0 else "vol_in"
+    if _STATE.get(key):
+        return _STATE[key]
     dshow.ole32.CoInitialize(None)
     enum = co_create(_CLSID_ENUM, _IID_ENUM)
     dev = ctypes.c_void_p(0)
-    # IMMDeviceEnumerator::GetDefaultAudioEndpoint(eRender=0, eMultimedia=1)
+    # IMMDeviceEnumerator::GetDefaultAudioEndpoint(flow: 0=render 1=capture,
+    #                                               eMultimedia=1)
     hr = com_call(enum, 3, (ctypes.c_int, ctypes.c_int,
                             ctypes.POINTER(ctypes.c_void_p)),
-                  0, 1, ctypes.byref(dev))
+                  flow, 1, ctypes.byref(dev))
     if hr < 0 or not dev.value:
         return None
     vol = ctypes.c_void_p(0)
@@ -42,17 +44,17 @@ def _endpoint_volume() -> Optional[int]:
                   ctypes.byref(vol))          # CLSCTX_INPROC_SERVER|... standard 0x17
     if hr < 0 or not vol.value:
         return None
-    _STATE["vol"] = vol.value
+    _STATE[key] = vol.value
     return vol.value
 
 
-def get_state() -> dict:
-    """{'muted': bool|None, 'level': float|None} for the default output."""
+def get_state(flow: int = 0) -> dict:
+    """{'muted': bool|None, 'level': float|None} for the default endpoint."""
     out = {"muted": None, "level": None}
     if not IS_WINDOWS:
         return out
     try:
-        vol = _endpoint_volume()
+        vol = _endpoint_volume(flow)
         if not vol:
             return out
         out["muted"] = bool(com_call(vol, 14, (), restype=ctypes.c_int))
@@ -62,26 +64,34 @@ def get_state() -> dict:
     return out
 
 
-def ensure_audible(level: float = 0.65) -> str:
-    """Unmute the default output and give it a sane level. Human-readable note."""
+def ensure_audible(level: float = 0.65, flow: int = 0) -> str:
+    """Unmute an endpoint and give it a sane level. Human-readable note.
+
+    flow=0 is the speakers (render), flow=1 the microphone (capture): a muted
+    or zeroed input endpoint makes a perfectly good mic look dead.
+    """
     if not IS_WINDOWS:
         return ""
     try:
-        vol = _endpoint_volume()
+        vol = _endpoint_volume(flow)
         if not vol:
             return ""
-        before = get_state()
+        before = get_state(flow)
         changed = []
         if before["muted"]:
             com_call(vol, 15, (ctypes.c_int, ctypes.c_void_p), 0, None)
-            changed.append("unmuted the Windows output")
+            changed.append("unmuted the Windows %s"
+                           % ("output" if flow == 0 else "microphone input"))
         cur = before["level"]
         if cur is not None and cur < level - 0.05:
             com_call(vol, 8, (ctypes.c_float, ctypes.c_void_p), level, None)
-            changed.append("raised the master volume from %d%% to %d%%"
-                           % (round(cur * 100), round(level * 100)))
+            changed.append("raised the %s level from %d%% to %d%%"
+                           % ("master" if flow == 0 else "microphone",
+                              round(cur * 100), round(level * 100)))
         if changed:
-            note = "The tool %s so the speaker test is meaningful." % " and ".join(changed)
+            note = ("The tool %s so the %s test is meaningful."
+                    % (" and ".join(changed),
+                       "speaker" if flow == 0 else "microphone"))
             _STATE["note"] = note
             return note
     except Exception:

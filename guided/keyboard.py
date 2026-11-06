@@ -283,6 +283,8 @@ class KeyboardWatcher:
         self.injected_seen = 0
         self.hook_keys = 0          # key-downs seen by the low-level hook
         self.hook_mode = False      # counting from the hook because Raw Input never arrives
+        self._win_keys: Dict[int, float] = {}
+        self._win_mode = False
         self._hook_handle = 0
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
@@ -611,6 +613,10 @@ class KeyboardTest:
                              font=("Segoe UI", 10, "bold"), anchor="w",
                              justify="left", wraplength=1030, padx=10, pady=6)
         self.warn.pack(fill="x", pady=(0, 8))
+        try:
+            self.top.bind("<KeyPress>", self._on_win_key)
+        except Exception:
+            pass
 
         # ---- key grid ------------------------------------------------------
         grid = tk.Frame(body, bg=COLOURS["bg"])
@@ -735,6 +741,42 @@ class KeyboardTest:
                           "This exception is recorded." % handle, "warn")
 
     # ------------------------------------------------------------------ loop
+    def _on_win_key(self, e: Any) -> None:
+        """Tier-3 capture: Tk's own key events on this full-screen window.
+
+        Only ever *counted* when both Raw Input and the low-level hook are
+        deaf (see _tick); the window is full-screen, topmost and grabbed, so
+        anything typed here is typed on the keyboard in front of the screen.
+        """
+        try:
+            vk = int(getattr(e, "keycode", 0) or 0)
+            if vk:
+                self._win_keys[vk] = time.time()
+        except Exception:
+            pass
+
+    def _merged_pressed(self, pressed: Dict[int, Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
+        if not self._win_mode:
+            return pressed
+        for vk in self._win_keys:
+            if vk not in pressed:
+                pressed[vk] = {"ok": True, "src": "window"}
+        return pressed
+
+    def _maybe_enable_window_mode(self) -> None:
+        if self._win_mode or len(self._win_keys) < 3:
+            return
+        if self.watcher.events or self.watcher.hook_keys:
+            return
+        self._win_mode = True
+        self.warn.configure(bg="#33290a",
+                            text="THIS WINDOWS DELIVERS NO KEYBOARD EVENTS TO THE TOOL'S "
+                                 "LISTENERS - keys are now counted from this full-screen test "
+                                 "window itself (only the keyboard in front of this screen can "
+                                 "type into it).")
+        if self.emit:
+            self.emit("Keyboard: raw+hook deaf - window capture mode enabled")
+
     def _tick(self) -> None:
         if self.top is None or not self.top.winfo_exists():
             return
@@ -748,7 +790,8 @@ class KeyboardTest:
                          "verified low-level hook instead (exactly one built-in keyboard found).")
                 if self.emit:
                     self.emit("Keyboard: WM_INPUT blocked by this Windows - hook mode enabled")
-        pressed = self.watcher.pressed()
+        self._maybe_enable_window_mode()
+        pressed = self._merged_pressed(self.watcher.pressed())
         done = 0
         total_req = 0
         for vk, label, row, required in KEYMAP:
@@ -812,7 +855,15 @@ class KeyboardTest:
     # ---------------------------------------------------------------- result
     def _write_result(self) -> None:
         res = self.res
-        pressed = self.watcher.pressed()
+        pressed = self._merged_pressed(self.watcher.pressed())
+        src = ("raw-input + low-level hook" if self.watcher.events and self.watcher.hook_ok
+               else "low-level hook" if self.watcher.events or self.watcher.hook_keys
+               else "window capture (fallback)" if self._win_mode
+               else "none - no key events reached the tool")
+        res.metric("Capture source", src)
+        if self._win_mode:
+            res.note("Both Raw Input and the low-level hook were deaf on this Windows; "
+                     "keys were counted from the full-screen test window instead.")
         vios = self.watcher.snapshot_violations()
         required = [(vk, label) for vk, label, row, req in KEYMAP if req]
         optional = [(vk, label) for vk, label, row, req in KEYMAP if not req]

@@ -354,8 +354,12 @@ def cpu_generation(cpu_name: str) -> Dict[str, Any]:
     m = re.search(r"i([3579])[- ](\d{1,2})(\d{2,3})", n)
     if m:
         gen = int(m.group(2))
+        if 10 <= gen % 100 <= 13:
+            suf = "th"
+        else:
+            suf = {1: "st", 2: "nd", 3: "rd"}.get(gen % 10, "th")
         res.update(brand="Intel", family="Core i%s" % m.group(1), gen=gen,
-                   gen_label="%dth Gen" % gen, win11_ok=gen >= 8)
+                   gen_label="%d%s Gen" % (gen, suf), win11_ok=gen >= 8)
         return res
     # Older Intel: "CPU 2.40GHz" without i-series, or Core2
     if "core2" in n or "core 2" in n:

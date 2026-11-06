@@ -219,11 +219,15 @@ def measure_pointer(master: tk.Misc, seconds: float = 12.0) -> Dict[str, Any]:
             out["travel"] += int(((p.x - state["last"].x) ** 2 +
                                   (p.y - state["last"].y) ** 2) ** 0.5)
             state["last"] = p
-            ld = bool(user32.GetAsyncKeyState(0x01) & 0x8000)
-            rd = bool(user32.GetAsyncKeyState(0x02) & 0x8000)
-            if ld and not state["l"]:
+            ls = user32.GetAsyncKeyState(0x01)
+            rs = user32.GetAsyncKeyState(0x02)
+            ld = bool(ls & 0x8000)
+            rd = bool(rs & 0x8000)
+            # low bit = "pressed since last call": catches tap-to-clicks that
+            # are shorter than the poll interval (edge detection alone misses them)
+            if (ls & 0x0001) or (ld and not state["l"]):
                 out["left"] += 1
-            if rd and not state["r"]:
+            if (rs & 0x0001) or (rd and not state["r"]):
                 out["right"] += 1
             state["l"], state["r"] = ld, rd
             left = seconds - (time.time() - state["t0"])
@@ -233,7 +237,7 @@ def measure_pointer(master: tk.Misc, seconds: float = 12.0) -> Dict[str, Any]:
                 out["ok"] = True
                 top.destroy()
                 return
-            top.after(50, tick)
+            top.after(35, tick)
         except Exception:
             out["ok"] = True
             try:
@@ -741,6 +745,8 @@ def run_cosmetic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         res.metric(it["label"][:50], label + ((" - " + note) if note else ""))
         if key is None:
             res.flag("Cosmetic item '%s' was never answered" % it["label"], "warn")
+            scores.append(55.0)          # uncertain, not clean
+            grade_points += 2            # half credit in the grade ratio
             continue
         sc = SCORE_FOR.get(key)
         if sc is not None:

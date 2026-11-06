@@ -895,7 +895,7 @@ class Wizard:
             html = paths.get(key)
             if not html:
                 return
-            out = os.path.splitext(html)[0] + ("_customer.pdf" if tag == "customer" else ".pdf")
+            out = os.path.splitext(html)[0] + ".pdf"
             ok = pdf_mod.html_to_pdf(html, out)
             if ok:
                 with lock:

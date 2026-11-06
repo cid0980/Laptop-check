@@ -480,6 +480,8 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         res.metric(it["label"].split(" - ")[0], label + ((" - " + note) if note else ""))
         if key is None:
             res.flag("'%s' was never answered" % it["label"], "warn")
+            scores.append(55.0)   # unanswered = uncertain, never silently "good"
+            continue
         sc = score_map.get(key)
         if sc is not None:
             scores.append(sc)
@@ -524,6 +526,10 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
     fix_note = fixes.allow_privacy("microphone")
     if fix_note:
         res.note(fix_note)
+    from app import audiovol as _av
+    vol_note = _av.ensure_audible(0.65, flow=1)
+    if vol_note:
+        res.note(vol_note)
     res.metric("Recording devices listed by Windows", audio.get("mics", 0) or "none listed (ignored)")
     if audio.get("mic_names"):
         res.metric("Device names", ", ".join(audio.get("mic_names"))[:90])

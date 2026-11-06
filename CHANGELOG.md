@@ -6,6 +6,32 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.5.1] - shop-PC bundle bug-hunt
+### Fixed (found in a real inspection bundle from the shop PC)
+- CPU stress crashed on Windows (3-tuple unpacked into 2) and was skipped.
+- Privacy-consent "fix" wrote DWORD 2 into ConsentStore Value entries that are
+  REG_SZ "Allow"/"Deny" - it could BREAK camera/mic consent. Rewritten to set
+  exactly the four switches that govern desktop apps (HKLM/HKCU base +
+  NonPackaged), string type, nothing else touched.
+- Microphone: the capture endpoint is now unmuted/raised before recording.
+- BitLocker: numeric VolumeStatus/ProtectionStatus enums decoded; a drive
+  with protection OFF no longer raises a grade-capping fail flag.
+- Bluetooth self-fix: Start-Service (not net start), wider service list, and
+  the tuple-unpack crash in ensure_bluetooth is gone.
+- Keyboard: tier-3 capture from the full-screen test window when both Raw
+  Input and the low-level hook are deaf; result records the capture source.
+- Touchpad: tap-to-clicks shorter than the poll interval are now caught via
+  the GetAsyncKeyState "pressed since last call" bit.
+- Scoring honesty: unanswered checklist items count as uncertain (55), never
+  silently as "good" - incomplete inspections can no longer score 100/100.
+- Reports: customer copy no longer leaks seller-side repair advice; real
+  middle dots instead of double-escaped entities; "6th Gen" not "6th Gen"
+  from a broken ordinal; clean BIOS/TPM summary line.
+- Customer PDF filename no longer doubles the suffix (_customer_customer.pdf).
+### Tests
+- Second regression fixture from a real machine (Lenovo X1C, S/N PF11Y309):
+  20 expected verdicts incl. missing-BT-driver, BitLocker-off, leftover data.
+
 ## [1.5.0]
 ### Professional UI system
 - One colour truth (app/theme.py): charcoal neutral + off-white ink + a single

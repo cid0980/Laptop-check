@@ -20,7 +20,7 @@ from app.core import IS_WINDOWS, diag, run_ps, run_shell
 
 AUDIO_SERVICES = ("AudioEndpointBuilder", "Audiosrv")
 WLAN_SERVICES = ("WlanSvc",)
-BT_SERVICES = ("bthserv",)
+BT_SERVICES = ("bthserv", "BTAGService", "BthAvctpSvc")
 
 
 def _state(name: str) -> str:
@@ -30,9 +30,10 @@ def _state(name: str) -> str:
 
 
 def _start(name: str) -> bool:
-    rc, out, err = run_shell('net start "%s"' % name, timeout=45)
-    ok = rc == 0
-    diag("fixes: net start %s rc=%s %s" % (name, rc, (out or err or "")[:120]))
+    out = run_ps("try { Start-Service -Name '%s' -ErrorAction Stop; 'OK' } "
+                 "catch { 'FAIL: ' + $_.Exception.Message }" % name, timeout=45)
+    ok = (out or "").strip().startswith("OK")
+    diag("fixes: Start-Service %s ok=%s %s" % (name, ok, (out or "")[:120]))
     return ok
 
 
@@ -98,31 +99,37 @@ def enable_wifi_adapter() -> str:
 def allow_privacy(kind: str) -> str:
     """Set the Windows privacy consent for webcam / microphone to Allow.
 
-    Desktop apps honour CapabilityAccessManager ConsentStore values; a shop
-    machine that was 'hardened' often has them on Deny, which makes every
-    camera and microphone look broken.
+    The ConsentStore 'Value' entries are REG_SZ strings ("Allow"/"Deny");
+    classic Win32 apps (like this tool) are governed by the NonPackaged
+    sub-key.  A shop machine that was 'hardened' often has Deny there, which
+    makes every camera and microphone look broken - so we open exactly the
+    four switches that matter, and touch nothing else.
     """
     if not IS_WINDOWS:
         return ""
-    base = ("HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\"
-            "CapabilityAccessManager\\ConsentStore\\%s" % kind)
-    script = (
-        "$changed = 0; "
-        "$keys = @('%s'); "
-        "$keys += (Get-ChildItem '%s' -Recurse -ErrorAction SilentlyContinue).PSPath; "
-        "foreach ($k in $keys) { "
-        "  $cur = (Get-ItemProperty -Path $k -Name Value -ErrorAction SilentlyContinue).Value; "
-        "  if ($cur -ne $null -and $cur -ne 2) { "
-        "    Set-ItemProperty -Path $k -Name Value -Value 2 -ErrorAction SilentlyContinue; "
-        "    $changed++ } }; "
-        "$changed" % (base, base))
+    lm = ("HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\"
+          "CapabilityAccessManager\\ConsentStore\\%s" % kind)
+    cu = ("HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\"
+          "CapabilityAccessManager\\ConsentStore\\%s" % kind)
+    script = "$changed = 0; "
+    for base in (lm, cu):
+        script += (
+            "New-Item -Path '%s' -Force -ErrorAction SilentlyContinue | Out-Null; "
+            "New-Item -Path '%s\\NonPackaged' -Force -ErrorAction SilentlyContinue | Out-Null; "
+            "foreach ($k in @('%s', '%s\\NonPackaged')) { "
+            "  $cur = (Get-ItemProperty -Path $k -Name Value -ErrorAction SilentlyContinue).Value; "
+            "  if ($cur -ne 'Allow') { "
+            "    Set-ItemProperty -Path $k -Name Value -Value 'Allow' -Type String -Force "
+            "      -ErrorAction SilentlyContinue; $changed++ } } "
+            % (base, base, base, base))
+    script += "; $changed"
     out = run_ps(script, timeout=30)
     try:
         n = int((out or "0").strip().splitlines()[-1])
     except Exception:
         n = 0
     if n:
-        diag("fixes: privacy consent %s changed on %d key(s)" % (kind, n))
+        diag("fixes: privacy consent %s set to Allow on %d key(s)" % (kind, n))
         label = "camera" if kind == "webcam" else "microphone"
         return ("Windows privacy settings were blocking the %s. The tool set the consent "
                 "to Allow (%d setting(s) changed) so the real hardware could be tested."
@@ -153,18 +160,20 @@ def ensure_bluetooth() -> str:
     ps = ("Get-PnpDevice -Class Bluetooth -ErrorAction SilentlyContinue | "
           "Where-Object { $_.Problem -eq 22 -or $_.Status -eq 'Disabled' } | "
           "Select-Object -ExpandProperty InstanceId")
-    rc, out, _err = run_ps(ps, timeout=40)
-    ids = [l.strip() for l in (out or "").splitlines() if l.strip()]
+    out = run_ps(ps, timeout=40)
+    ids = [l.strip() for l in (out or "").splitlines()
+           if l.strip() and not l.startswith(("#", "<", "FullyQualified"))]
     if not ids:
         return ""
     done = 0
     for iid in ids[:6]:
-        rc2, _o, e2 = run_ps("Enable-PnpDevice -InstanceId '%s' -Confirm:$false -ErrorAction SilentlyContinue"
-                            % iid.replace("'", "''"), timeout=40)
-        if rc2 == 0:
+        o2 = run_ps("try { Enable-PnpDevice -InstanceId '%s' -Confirm:$false "
+                    "-ErrorAction Stop; 'OK' } catch { 'FAIL: ' + $_.Exception.Message }"
+                    % iid.replace("'", "''"), timeout=40)
+        if (o2 or "").strip().startswith("OK"):
             done += 1
         else:
-            diag("fixes: Enable-PnpDevice %s failed: %s" % (iid, (e2 or "")[:120]))
+            diag("fixes: Enable-PnpDevice %s failed: %s" % (iid, (o2 or "")[:120]))
     if done:
         diag("fixes: enabled %d disabled Bluetooth device(s)" % done)
         return ("The Bluetooth radio was switched off in Windows. The tool turned it back "

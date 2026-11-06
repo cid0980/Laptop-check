@@ -564,30 +564,30 @@ def _specs(scan: Scan) -> str:
 
     cards = [
         spec("Processor", cpu.get("name", "-").split(" CPU ")[0][:38],
-             "%s cores / %s threads &middot; %s" % (cpu.get("cores", "?"), cpu.get("threads", "?"),
+             "%s cores / %s threads \u00b7 %s" % (cpu.get("cores", "?"), cpu.get("threads", "?"),
                                                     gen.get("gen_label", ""))),
         spec("Memory", "%d GB" % int(mem.get("total_gb") or 0) if mem.get("total_gb") else "-",
-             "%s &middot; %d module(s) &middot; %s" % (mem.get("type", ""), mem.get("modules", 0),
+             "%s \u00b7 %d module(s) \u00b7 %s" % (mem.get("type", ""), mem.get("modules", 0),
                                                        ("%d free slot(s)" % mem["free_slots"])
                                                        if mem.get("free_slots") else "no free slot")),
         spec("Storage", fmt_bytes(sto.get("total_bytes")) if sto.get("total_bytes") else "-",
-             "%s &middot; %d disk(s)%s" % ("SSD" if sto.get("has_ssd") else "HDD",
+             "%s \u00b7 %d disk(s)%s" % ("SSD" if sto.get("has_ssd") else "HDD",
                                            len(sto.get("disks") or []),
-                                           " &middot; wear %d%%" % sto["max_wear"]
+                                           " \u00b7 wear %d%%" % sto["max_wear"]
                                            if sto.get("max_wear") else "")),
         spec("Display", disp.get("klass", "-"),
-             ("%s &middot; " % ('%.1f"' % disp["size_inch"]) if disp.get("size_inch") else "") +
+             ("%s \u00b7 " % ('%.1f"' % disp["size_inch"]) if disp.get("size_inch") else "") +
              ("%dx%d" % (disp["cur_w"], disp["cur_h"]) if disp.get("cur_w") else "") +
-             (" &middot; touch" if disp.get("touch") else "")),
+             (" \u00b7 touch" if disp.get("touch") else "")),
         spec("Graphics", (gpu.get("names") or ["-"])[0][:34],
              "%d adapter(s)%s" % (gpu.get("count", 0),
-                                   " &middot; dedicated GPU" if gpu.get("dedicated") else " &middot; integrated")),
+                                   " \u00b7 dedicated GPU" if gpu.get("dedicated") else " \u00b7 integrated")),
         spec("Battery", ("%.0f%% health" % batt["health"]) if batt.get("health") else
              ("present" if batt.get("present") else "not fitted"),
              ("%d charge cycles" % batt["cycles"]) if batt.get("cycles") is not None else
              ("cycle count not reported" if batt.get("present") else "-")),
         spec("Operating system", (osinfo.get("caption") or "-").replace("Microsoft ", ""),
-             "%s &middot; %s" % ("Activated" if osinfo.get("activated") else "NOT activated",
+             "%s \u00b7 %s" % ("Activated" if osinfo.get("activated") else "NOT activated",
                                  "Windows 11" if osinfo.get("win11_installed")
                                  else ("Windows 11 capable" if osinfo.get("win11_capable")
                                        else "Windows 11 NOT supported"))),
@@ -794,9 +794,7 @@ def _valuation(scan: Scan, mode: str) -> str:
 def _recommendations(scan: Scan, mode: str) -> str:
     recs = recommendations(scan)
     if mode == "customer":
-        recs = [r for r in recs if r["priority"] in ("NICE",)] or []
-        if not recs:
-            return ""
+        return ""   # repair advice is seller-side; the buyer copy stays clean
     colour = {"SAFETY": "#c62828", "MUST": "#e05a00", "SHOULD": "#b26a00", "NICE": "#0f7b3f"}
     rows = "".join(
         '<tr><td><span class="pill" style="color:%s;background:%s18;border:1px solid %s44">%s</span></td>'

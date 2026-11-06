@@ -231,7 +231,7 @@ def _stress_body(res: CheckResult, ctx: Dict[str, Any], cores: int, seconds: int
                  say: Callable[[str], None], plan_before: str,
                  _restore_plan: Callable[[], None]) -> None:
     cpu = ctx.get("cpu") or {}
-    t0, t1 = read_temperatures()
+    t0, _clk0, _load0 = read_temperatures()
     res.metric("Threads used", cores)
     res.metric("Test length", "%d seconds" % seconds)
     if t0:

@@ -345,13 +345,20 @@ def check_bios_tpm(res: CheckResult, ctx: Dict[str, Any]) -> None:
     if bl:
         for row in bl:
             mp = _s(get(row, "MountPoint"))
-            vs = _s(get(row, "VolumeStatus"))
-            ps = _s(get(row, "ProtectionStatus"))
-            res.metric("BitLocker %s" % mp, "%s / protection %s" % (vs or "?", ps or "?"))
-            if vs and vs.lower() not in ("fullydecrypted", "fully decrypted"):
+            vs_raw = _s(get(row, "VolumeStatus"))
+            ps_raw = _s(get(row, "ProtectionStatus"))
+            vol = {"0": "FullyDecrypted", "1": "FullyEncrypted",
+                   "2": "EncryptionInProgress", "3": "DecryptionInProgress",
+                   "4": "UsedSpaceOnly"}.get(vs_raw, vs_raw)
+            prot = {"0": "Off", "1": "On", "2": "Unknown"}.get(ps_raw, ps_raw)
+            res.metric("BitLocker %s" % mp, "%s / protection %s" % (vol or "?", prot or "?"))
+            encrypted = vol.lower() in ("fullyencrypted", "encryptioninprogress",
+                                        "decryptioninprogress", "usedspaceonly") or \
+                (prot.lower() == "on" and vol.lower() != "fullydecrypted")
+            if encrypted:
                 score -= 25
-                res.flag("Drive %s is BitLocker-encrypted (%s) - MUST be decrypted or the recovery key handed over"
-                         % (mp, vs), "fail")
+                res.flag("Drive %s is BitLocker-encrypted (%s, protection %s) - MUST be decrypted "
+                         "or the recovery key handed over" % (mp, vol, prot), "fail")
     else:
         res.metric("BitLocker", "Not available (Windows Home) or not encrypted")
 
@@ -365,8 +372,10 @@ def check_bios_tpm(res: CheckResult, ctx: Dict[str, Any]) -> None:
         except Exception:
             pass
 
+    tpm_short = (tpm_spec or "").split(",")[0].strip() or "not detected"
+    ver_clean = " ".join((ver or "?").split())
     res.set("pass" if score >= 85 else ("warn" if score >= 55 else "fail"),
-            "BIOS %s (%s), TPM %s" % (ver or "?", rel or "?", tpm_spec), score=score)
+            "BIOS %s (%s), TPM %s" % (ver_clean, rel or "?", tpm_short), score=score)
 
 
 # ==========================================================================
