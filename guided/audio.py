@@ -461,9 +461,68 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
          "actions": [("\u25b6  PLAY BOTH", play("both"))], "options": opts, "note": True},
     ]
 
+    # ---- automatic speaker->mic probe (no user input needed) -------------
+    # Plays LEFT then RIGHT through the speakers while the microphone
+    # records; a clear level jump in each window proves that speaker AND the
+    # microphone chain work.  Runs in the background while the checklist is
+    # already on screen; proved rows pre-answer themselves.
+    probe: Dict[str, Any] = {"done": False}
+    apply_fn: Dict[str, Any] = {"fn": None}
+
+    def _apply_probe() -> None:
+        fn = apply_fn.get("fn")
+        if probe.get("okL") and fn:
+            fn("left", "good")
+        if probe.get("okR") and fn:
+            fn("right", "good")
+            fn("both", "good")
+        if probe.get("done") and not probe.get("error") and emit:
+            emit("Speaker probe: left %s, right %s (measured with the laptop's own mic)"
+                 % ("heard" if probe.get("okL") else "NOT heard",
+                    "heard" if probe.get("okR") else "NOT heard"))
+
+    def _probe_thread() -> None:
+        rec = MicRecorder()
+        if not rec.start():
+            probe.update(done=True, error=getattr(rec, "error", "") or "mic closed")
+            return
+        try:
+            time.sleep(0.6)
+            tl = rec.elapsed()
+            play_wav(tones.get("left") or "")
+            time.sleep(2.9)
+            tr = rec.elapsed()
+            play_wav(tones.get("right") or "")
+            time.sleep(2.9)
+            rec.stop()
+            lv = rec.levels or []
+            base = max([b["peak_db"] for b in lv if b["t"] < tl - 0.2], default=-70.0)
+            dl = max([b["peak_db"] for b in lv if tl + 0.3 <= b["t"] <= tl + 2.6], default=-70.0) - base
+            dr = max([b["peak_db"] for b in lv if tr + 0.3 <= b["t"] <= tr + 2.6], default=-70.0) - base
+            probe.update(done=True, base=base, dL=dl, dR=dr, okL=dl > 6.0, okR=dr > 6.0)
+        except Exception as exc:      # probe must never break the test
+            probe.update(done=True, error=str(exc))
+        finally:
+            try:
+                rec.close()
+            except Exception:
+                pass
+        try:
+            master.after(0, _apply_probe)
+        except Exception:
+            pass
+
+    def _on_ready(fn: Callable[[str, str], None]) -> None:
+        apply_fn["fn"] = fn
+        if probe.get("done"):
+            _apply_probe()
+
+    threading.Thread(target=_probe_thread, daemon=True).start()
+
     out = checklist_dialog(master, "Speaker and headphone test",
-                           "Play each tone, listen, then mark it. Do not guess - actually listen.",
-                           items)
+                           "The first rows answer themselves while the laptop listens to its "
+                           "own speakers - play the rest and confirm.",
+                           items, on_ready=_on_ready)
     stop_sound()
 
     if out.get("cancelled"):
@@ -489,6 +548,18 @@ def run_speaker_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
             res.flag("%s: NO SOUND" % it["label"].split(" - ")[0], "fail")
         elif key == "weak":
             res.flag("%s: weak or distorted" % it["label"].split(" - ")[0], "warn")
+
+    if probe.get("done"):
+        if probe.get("error"):
+            res.note("Automatic speaker probe could not run (%s) - marks are manual." % probe["error"])
+        else:
+            res.metric("Auto probe (mic heard speakers)",
+                       "LEFT %+.1f dB %s / RIGHT %+.1f dB %s" % (
+                           probe.get("dL", 0), "heard" if probe.get("okL") else "not heard",
+                           probe.get("dR", 0), "heard" if probe.get("okR") else "not heard"))
+            if probe.get("okL") and probe.get("okR"):
+                res.note("Objective proof: the laptop's own microphone heard both speaker "
+                         "channels - speakers and microphone both work.")
 
     res.metric("Tones actually played", len(state["played"]))
     if not state["played"]:
@@ -556,7 +627,17 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         dlg.add_action("\u25b6  SPEAKER\u2192MIC LOOPBACK", loopback, COLOURS["panel2"])
         dlg.add_action("Stop", stop_rec, COLOURS["panel2"])
         _draw_meter(cv, [])
-        dlg.say("Press START RECORDING, then speak.")
+        dlg.say("Measuring automatically - the tool records while the speakers play a tone.")
+
+        def _auto() -> None:
+            if state.get("started") or state.get("auto"):
+                return
+            state["auto"] = True
+            start_rec()
+            master.after(800, lambda: state.get("started") and loopback())
+            master.after(5400, stop_rec)
+
+        master.after(500, _auto)
 
     def _draw_meter(cv: tk.Canvas, levels: List[Dict[str, Any]]) -> None:
         try:
@@ -664,8 +745,14 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                 res.metric("Speaker-to-mic loopback",
                            "%+.1f dB over baseline (%.1f -> %.1f dB)" % (d_db - b_db, b_db, d_db))
                 if d_db - b_db > 6:
+                    state["lb_proof"] = d_db - b_db
                     res.note("Loopback proof: the microphone clearly heard the speaker tone - "
                              "speakers AND microphone both work.")
+                    d0 = state.get("dlg")
+                    if d0 and d0.set_mark("good"):
+                        d0.say("AUTO LOOPBACK: the mic heard the speaker tone %+.1f dB over the "
+                               "baseline - marked MIC WORKS. Change the mark only if you "
+                               "disagree." % (d_db - b_db), COLOURS["good"])
                 else:
                     res.note("Loopback: the microphone did not clearly hear the speaker tone "
                              "(mic muted, speakers very quiet, or mic far from speakers).")
@@ -727,6 +814,13 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
         if peak_db < -50 and mark == "good":
             res.note("WARNING: marked 'works' but the measured peak was only %.1f dBFS (very quiet)." % peak_db)
             score = 70.0
+    proof = state.get("lb_proof")
+    if proof and mark == "good":
+        # objective proof beats absolute level: the chain works end to end.
+        score = max(score or 0.0, 92.0)
+        res.note("Score raised by loopback proof (+%.1f dB over baseline): microphone and "
+                 "speakers verified without a human ear. If callers say the mic is quiet, "
+                 "raise the microphone boost in Windows sound settings." % proof)
     if state.get("open_error") and mark in (None, "none"):
         res.flag("Microphone could not be opened: %s" % state["open_error"], "warn")
     if score is None:

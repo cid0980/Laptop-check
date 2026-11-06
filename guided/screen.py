@@ -166,7 +166,7 @@ class ScreenTest:
         self._build_panel()
 
         self.top.bind("<Key>", self._on_key)
-        self.top.bind("<Motion>", self._show_panel)
+        self.top.bind("<Motion>", self._on_motion)
         self.top.bind("<Button-1>", self._show_panel)
         self.top.protocol("WM_DELETE_WINDOW", self._finish)
         self.top.focus_force()
@@ -260,13 +260,43 @@ class ScreenTest:
                 self.top.after_cancel(self.hide_job)
             except Exception:
                 pass
-        self.hide_job = self.top.after(6000, self._hide_panel)
+        # short: the panel covers real pixels - dead pixels hide under it.
+        self.hide_job = self.top.after(2500, self._hide_panel)
 
     def _hide_panel(self) -> None:
         if self.panel and self.panel_visible:
             self.panel.place_forget()
             self.panel_visible = False
         self.hide_job = None
+        self._toast("controls hidden - full screen is pure colour now\n"
+                    "keys 1/2/3/4 mark, Space next, mouse to bottom edge for panel")
+
+    def _toast(self, text: str) -> None:
+        """Tiny corner hint while the panel is hidden (1.6 s, then gone)."""
+        try:
+            t = getattr(self, "toast", None)
+            if t is None or not t.winfo_exists():
+                t = self.toast = tk.Label(self.top, bg="#10141b", fg="#8b93a5",
+                                          font=("Segoe UI", 8), justify="left",
+                                          padx=8, pady=4)
+            t.configure(text=text)
+            t.place(relx=1.0, rely=1.0, anchor="se", x=-8, y=-8)
+            self.top.after(1600, lambda: t.place_forget()
+                           if t.winfo_exists() else None)
+        except Exception:
+            pass
+
+    def _on_motion(self, event: Any = None) -> None:
+        """Reveal the panel only when the pointer reaches the bottom strip -
+        moving the mouse over the test image must not park the panel over
+        real pixels (that is where dead pixels hide)."""
+        try:
+            near = event is not None and event.y >= (self.h - 90)
+        except Exception:
+            near = True
+        if near:
+            self._show_panel(event)
+        # visible + pointer elsewhere: let the scheduled hide run its course
 
     def _show_panel(self, event: Any = None) -> None:
         if not self.panel_visible:
@@ -282,7 +312,7 @@ class ScreenTest:
                 pass
         # ALWAYS schedule the hide: the panel must never stay parked over the
         # bottom of the screen - dead pixels hide underneath it otherwise.
-        self.hide_job = self.top.after(3200, self._hide_panel)
+        self.hide_job = self.top.after(2600, self._hide_panel)
 
     # --------------------------------------------------------------- screens
     def _clear(self) -> None:

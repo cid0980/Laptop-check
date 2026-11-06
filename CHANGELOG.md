@@ -1,3 +1,20 @@
+## v1.5.3 - less manual work, real-machine fixes from the second shop bundle
+- CRASH FIX: mic panel died with "'GuidedDialog' object has no attribute 'status'"
+  (status label was created after panels build; dlg.say() inside build crashed).
+- SPEAKERS auto-probe: on open the tool plays LEFT then RIGHT while the laptop's
+  own microphone records; heard channels pre-answer their checklist rows and the
+  report carries the measured dB proof (zero user input for L/R/both).
+- MICROPHONE auto loopback: recording + speaker tone start by themselves; a clear
+  loopback jump marks MIC WORKS automatically and raises the score (objective
+  proof beats absolute level; the tech can still override the mark).
+- KEYBOARD: Shift/Ctrl/Alt sides now credited via Tk keysyms (Shift_L=0xA0 ...),
+  PrintScreen and other Windows-withheld keys credited by an always-on OS-level
+  gap-filler poll (source tagged 'poll' in the report).
+- SCREEN: control panel hides after 2.5 s and only reappears at the bottom edge;
+  a corner toast explains keys 1-4/Space while hidden - no pixels covered.
+- CAMERA: WinRT child now runs via -EncodedCommand first (unsigned .ps1 files can
+  be policy-blocked silently) with a -File fallback; launch.log + real error text
+  instead of 'no frames and no error text'.
 # Changelog
 
 All notable changes to **Laptop Check Pro** are documented here.

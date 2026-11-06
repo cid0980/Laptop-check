@@ -126,16 +126,17 @@ class GuidedDialog:
 
         self.action_frame = tk.Frame(body, bg=COLOURS["bg"])
         self.action_frame.pack(fill="x", pady=(0, 10))
+        # status label MUST exist before body_builder runs: panels call
+        # dlg.say() while they build (v1.5.2 crash: 'no attribute status').
+        self.status = tk.Label(body, text="", bg=COLOURS["bg"], fg=COLOURS["muted"],
+                               font=("Segoe UI", 10), anchor="w", justify="left", wraplength=w - 80)
+        self.status.pack(fill="x", pady=(4, 4))
         if body_builder:
             try:
                 body_builder(self, body)
             except Exception as exc:
                 tk.Label(body, text="Panel error: %s" % exc, bg=COLOURS["bg"],
                          fg="#ff9d9d", font=("Segoe UI", 9)).pack(fill="x")
-
-        self.status = tk.Label(body, text="", bg=COLOURS["bg"], fg=COLOURS["muted"],
-                               font=("Segoe UI", 10), anchor="w", justify="left", wraplength=w - 80)
-        self.status.pack(fill="x", pady=(4, 4))
 
         # ---- mark row ----------------------------------------------------
         markrow = tk.Frame(host, bg=COLOURS["panel"])
@@ -175,6 +176,14 @@ class GuidedDialog:
         except Exception:
             pass
 
+    def set_mark(self, key: str) -> bool:
+        """Pre-select a mark as if the user clicked it (automation).
+        Does NOT close the dialog - the user still confirms or changes it."""
+        if key in getattr(self, "mark_buttons", {}):
+            self._select(key)
+            return True
+        return False
+
     def say(self, text: str, colour: Optional[str] = None) -> None:
         self.status.configure(text=text, fg=colour or COLOURS["muted"])
         try:
@@ -208,10 +217,21 @@ class GuidedDialog:
         elif event.keysym == "Escape":
             self._cancel()
 
-    def _choose(self, mark: str) -> None:
+    def _select(self, mark: str) -> None:
         self.result["mark"] = mark
-        self.result["note"] = self.note.get().strip()
+        try:
+            self.result["note"] = self.note.get().strip()
+        except Exception:
+            pass
         self.result["cancelled"] = False
+        for k, b in getattr(self, "mark_buttons", {}).items():
+            try:
+                b.configure(relief="sunken" if k == mark else "flat")
+            except Exception:
+                pass
+
+    def _choose(self, mark: str) -> None:
+        self._select(mark)
         self._close()
 
     def _cancel(self) -> None:
@@ -245,13 +265,18 @@ def mark_dialog(master: tk.Misc, title: str, subtitle: str = "",
 
 
 def checklist_dialog(master: tk.Misc, title: str, subtitle: str,
-                     items: List[Dict[str, Any]], width: int = 820) -> Dict[str, Any]:
+                     items: List[Dict[str, Any]], width: int = 820,
+                     preset: Optional[Dict[str, str]] = None,
+                     on_ready: Optional[Callable[[Callable[[str, str], None]], None]] = None) -> Dict[str, Any]:
     """A list of yes/no/na questions (used for ports and cosmetic checks).
 
     items: [{'id','label','hint','options':[(key,label,colour),...]}]
+    preset: {item_id: option_key} pre-answered by an automatic measurement -
+    the user can still change every row before FINISH.
     Returns {'answers': {id: key}, 'note': str, 'cancelled': bool}
     """
     answers: Dict[str, Any] = {}
+    handlers: Dict[Any, Callable[[], None]] = {}
     result: Dict[str, Any] = {"answers": answers, "note": "", "cancelled": True, "mark": None}
 
     top = tk.Toplevel(master)
@@ -348,10 +373,12 @@ def checklist_dialog(master: tk.Misc, title: str, subtitle: str,
             return handler
 
         for key, text, colour in opts:
+            h = make(it["id"], key, text, colour, lbl)
+            handlers[(it["id"], key)] = h
             b = tk.Button(brow, text=text, bg=COLOURS["panel2"], fg=colour, relief="flat",
                           activebackground=colour, activeforeground="white",
                           font=("Segoe UI", 9, "bold"), padx=10, pady=4, cursor="hand2",
-                          command=make(it["id"], key, text, colour, lbl))
+                          command=h)
             b.pack(side="left", padx=3)
         if it.get("note"):
             ent = tk.Entry(brow, bg=COLOURS["panel2"], fg=COLOURS["text"], relief="flat",
@@ -359,6 +386,22 @@ def checklist_dialog(master: tk.Misc, title: str, subtitle: str,
             ent.pack(side="left", padx=6, ipady=3)
             note_entries[it["id"]] = ent
         row_frames.append(box)
+
+    if preset:
+        for (iid, key), h in handlers.items():
+            if preset.get(iid) == key:
+                h()
+
+    def _apply(iid: str, key: str) -> None:
+        h = handlers.get((iid, key))
+        if h:
+            h()
+
+    if on_ready:
+        try:
+            on_ready(_apply)
+        except Exception:
+            pass
 
     foot = tk.Frame(top, bg=COLOURS["panel"])
     foot.pack(fill="x", side="bottom")

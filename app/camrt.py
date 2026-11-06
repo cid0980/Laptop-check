@@ -127,17 +127,43 @@ def live_frames(folder: str, seconds: float = 25.0, fps: float = 1.5,
     except Exception as exc:
         status["error"] = "could not write capture script: %s" % exc
         return status
-    cmd = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
-           "-File", ps1]
+    # -EncodedCommand first: an unsigned .ps1 FILE can be blocked by script
+    # execution policy / Smart App Control while inline encoded commands run
+    # (this machine's own probes use -EncodedCommand successfully).
+    import base64
+    enc = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+    attempts = [
+        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-EncodedCommand", enc],
+        ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-File", ps1],
+    ]
+    launch_log: list = []
+    for cmd in attempts:
+        try:
+            proc = subprocess.run(cmd, timeout=seconds + 60,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except subprocess.TimeoutExpired:
+            launch_log.append((cmd[-2], "timeout", ""))
+            status["error"] = "capture timed out"
+            break
+        except Exception as exc:
+            launch_log.append((cmd[-2], "exception", str(exc)))
+            status["error"] = "%s: %s" % (type(exc).__name__, exc)
+            break
+        err = proc.stderr.decode("utf-8", "replace").strip()
+        out = proc.stdout.decode("utf-8", "replace").strip()
+        launch_log.append((cmd[-2], "rc=%d" % proc.returncode, (err or out)[:300]))
+        if proc.returncode not in (0, 2) and err:
+            status["error"] = err[:400]
+        if os.path.exists(os.path.join(folder, "status.json")):
+            break
     try:
-        proc = subprocess.run(cmd, timeout=seconds + 60,
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if proc.returncode not in (0, 2) and proc.stderr:
-            status["error"] = proc.stderr.decode("utf-8", "replace")[:400]
-    except subprocess.TimeoutExpired:
-        status["error"] = "capture timed out"
-    except Exception as exc:
-        status["error"] = "%s: %s" % (type(exc).__name__, exc)
+        with open(os.path.join(folder, "launch.log"), "w", encoding="utf-8") as fh:
+            for mode, rc, tail in launch_log:
+                fh.write("%s %s %s\n" % (mode, rc, tail))
+    except Exception:
+        pass
     sp = os.path.join(folder, "status.json")
     if os.path.exists(sp):
         try:
@@ -147,7 +173,10 @@ def live_frames(folder: str, seconds: float = 25.0, fps: float = 1.5,
         except Exception:
             pass
     if not status.get("ok") and not status.get("error"):
-        status["error"] = "WinRT capture produced no frames and no error text"
+        tail = "; ".join("%s %s %s" % t for t in launch_log)[:300]
+        status["error"] = ("WinRT capture child left no status file "
+                           "(script blocked or crashed): " + tail) if tail else \
+                          "WinRT capture produced no frames and no error text"
     status["frames"] = len([f for f in os.listdir(folder)
                             if f.startswith("frame_") and f.endswith(".png")])
     status["ok"] = bool(status["frames"])

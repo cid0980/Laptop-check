@@ -539,6 +539,24 @@ class KeyboardWatcher:
 # the dialog
 # --------------------------------------------------------------------------
 
+_KEYSYM_VK = {
+    "Shift_L": 0xA0, "Shift_R": 0xA1,
+    "Control_L": 0xA2, "Control_R": 0xA3,
+    "Alt_L": 0x12, "Alt_R": 0xA5,
+    "Print": 0x2C, "PrintScreen": 0x2C, "Snapshot": 0x2C,
+}
+
+
+def _merged_all(kt: Any) -> Dict[int, Any]:
+    """Union of every capture source, for reporting poll-credited keys."""
+    try:
+        out = dict(kt.watcher.pressed())
+        out.update(kt._win_keys)
+        return out
+    except Exception:
+        return {}
+
+
 class KeyboardTest:
     def __init__(self, master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                  emit: Optional[Callable[[str], None]] = None) -> None:
@@ -554,6 +572,9 @@ class KeyboardTest:
         self.top: Optional[tk.Toplevel] = None
         self.confirm_var = tk.BooleanVar(value=False)
         self._win_keys: Dict[int, float] = {}
+        self._win_src: Dict[int, str] = {}
+        self._gap_mode = IS_WINDOWS   # gap-filler poll: catches keys Windows
+                                      # withholds from apps (PrintScreen etc.)
         self._win_mode = False
         self._poll_mode = False
         self._t_start = time.time()
@@ -621,6 +642,11 @@ class KeyboardTest:
         except Exception:
             pass
         self._force_focus()
+        if self._gap_mode:
+            try:
+                self.top.after(250, self._poll_keys)
+            except Exception:
+                pass
 
         # ---- key grid ------------------------------------------------------
         grid = tk.Frame(body, bg=COLOURS["bg"])
@@ -769,10 +795,18 @@ class KeyboardTest:
             pass
 
     def _poll_keys(self) -> None:
-        """Tier-4: OS-level key poll (GetAsyncKeyState 'pressed since last
-        call' bit). Focus-independent, device-attribution unavailable - used
-        only when every per-device path on this Windows is deaf."""
-        if not self._poll_mode or self.top is None or not self.top.winfo_exists():
+        """OS-level key poll (GetAsyncKeyState 'pressed since last call' bit).
+
+        Two roles:
+        * gap-filler (always on, on Windows): some keys never reach an app's
+          window (PrintScreen, some modifier combos) - the poll credits them
+          with source 'poll' so a working key is never reported missing;
+        * tier-4 fallback: when every per-device path is deaf, the poll (and
+          the window) become the main capture source.
+        Focus-independent; device attribution unavailable for polled keys."""
+        if self.top is None or not self.top.winfo_exists():
+            return
+        if not (self._poll_mode or self._gap_mode):
             return
         try:
             user32 = ctypes.windll.user32
@@ -783,7 +817,8 @@ class KeyboardTest:
                     continue
                 if user32.GetAsyncKeyState(vk) & 0x0001:
                     self._win_keys[vk] = time.time()
-            self.top.after(35, self._poll_keys)
+                    self._win_src[vk] = "poll"
+            self.top.after(35 if self._poll_mode else 90, self._poll_keys)
         except Exception:
             pass
 
@@ -795,9 +830,11 @@ class KeyboardTest:
         anything typed here is typed on the keyboard in front of the screen.
         """
         try:
-            vk = int(getattr(e, "keycode", 0) or 0)
-            if vk:
+            ks = str(getattr(e, "keysym", "") or "")
+            vk = _KEYSYM_VK.get(ks, 0) or int(getattr(e, "keycode", 0) or 0)
+            if vk and vk not in self._win_keys:
                 self._win_keys[vk] = time.time()
+                self._win_src.setdefault(vk, "window")
         except Exception:
             pass
 
@@ -806,7 +843,7 @@ class KeyboardTest:
             return pressed
         for vk in self._win_keys:
             if vk not in pressed:
-                pressed[vk] = {"ok": True, "src": "window"}
+                pressed[vk] = {"ok": True, "src": self._win_src.get(vk, "window")}
         return pressed
 
     def _maybe_enable_window_mode(self) -> None:
@@ -935,6 +972,12 @@ class KeyboardTest:
                else "window capture (fallback)" if self._win_mode
                else "none - no key events reached the tool")
         res.metric("Capture source", src)
+        npoll = len([vk for vk in self._win_src if self._win_src[vk] == "poll"
+                     and vk in _merged_all(self)])
+        if npoll:
+            res.note("%d key(s) (e.g. PrintScreen / modifier sides) were credited by the "
+                     "OS-level poll because Windows withholds them from application "
+                     "windows; device attribution is not available for those." % npoll)
         if self._win_mode:
             res.note("Both Raw Input and the low-level hook were deaf on this Windows; "
                      "keys were counted from the full-screen test window instead.")
