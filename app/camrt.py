@@ -44,13 +44,20 @@ function Wait-Op([object]$op) {
 
 $status = [ordered]@{ ok=$false; frames=0; error=''; device=''; width='?'; height='?'; engine='winrt-mediacapture' }
 function Write-Status {
-  $status | ConvertTo-Json -Compress | Set-Content -LiteralPath (Join-Path $folder 'status.json') -Encoding UTF8
+  $json = $status | ConvertTo-Json -Compress
+  try {
+    Set-Content -LiteralPath (Join-Path $folder 'status.json') -Value $json -Encoding UTF8
+  } catch {
+    try { [System.IO.File]::WriteAllText((Join-Path $folder 'status.json'), $json) } catch { }
+  }
 }
 
-try {
+Write-Status   # early: proves the child started, even if a later step dies
+
+function Start-Capture([Windows.Media.Capture.PhotoCaptureSource]$src) {
   $set = New-Object Windows.Media.Capture.MediaCaptureInitializationSettings
   $set.StreamingCaptureMode  = [Windows.Media.Capture.StreamingCaptureMode]::Video
-  $set.PhotoCaptureSource    = [Windows.Media.Capture.PhotoCaptureSource]::VideoPreview
+  $set.PhotoCaptureSource    = $src
   if ($index -ge 0) {
     $found = Wait-Op ([Windows.Devices.Enumeration.DeviceInformation]::FindAllAsync([Windows.Devices.Enumeration.DeviceClass]::VideoCapture))
     if ($found.Count -gt $index) {
@@ -61,16 +68,36 @@ try {
       $status.device = $found[0].Name
     }
   }
-  $mc = New-Object Windows.Media.Capture.MediaCapture
-  Wait-Op ($mc.InitializeAsync($set))
+  $script:mc = New-Object Windows.Media.Capture.MediaCapture
+  Wait-Op ($script:mc.InitializeAsync($set))
   if (-not $status.device) { $status.device = 'default camera' }
+  # some drivers deliver photo frames only while a preview stream runs
+  try {
+    $script:pv = New-Object Windows.Storage.Streams.InMemoryRandomAccessStream
+    Wait-Op ($script:mc.StartPreviewAsync($script:pv))
+    $status.preview = 'started'
+  } catch { $status.preview = 'not-needed-or-failed' }
   Write-Status
+}
 
+try {
+  Start-Capture ([Windows.Media.Capture.PhotoCaptureSource]::VideoPreview)
   $i = 0
   $sw = [Diagnostics.Stopwatch]::StartNew()
   while ($sw.Elapsed.TotalSeconds -lt $seconds) {
     $stream = New-Object Windows.Storage.Streams.InMemoryRandomAccessStream
-    Wait-Op ($mc.CapturePhotoToStreamAsync($stream, [Windows.Graphics.Imaging.BitmapEncoder]::PngEncoderId))
+    try {
+      Wait-Op ($mc.CapturePhotoToStreamAsync($stream, [Windows.Graphics.Imaging.BitmapEncoder]::PngEncoderId))
+    } catch {
+      if ($i -eq 0 -and $status.preview -ne 'photo-retried') {
+        # second engine: plain Photo capture source, no preview
+        $status.preview = 'photo-retried'
+        try { $mc.Dispose() } catch { }
+        Start-Capture ([Windows.Media.Capture.PhotoCaptureSource]::Photo)
+        $stream = New-Object Windows.Storage.Streams.InMemoryRandomAccessStream
+        Wait-Op ($mc.CapturePhotoToStreamAsync($stream, [Windows.Graphics.Imaging.BitmapEncoder]::PngEncoderId))
+      } else { throw }
+    }
     $size = [uint32]$stream.Size
     $reader = New-Object Windows.Storage.Streams.DataReader($stream.GetInputStreamAt(0))
     [void](Wait-Op ($reader.LoadAsync($size)))
@@ -97,6 +124,24 @@ try {
   exit 2
 }
 """
+
+
+def _decode_ps_stderr(raw: bytes) -> str:
+    """PowerShell wraps error records in CLIXML when stderr is a pipe; the
+    real exception text is inside <S S="Error">...</S> spans (v1.5.3 shop
+    logs showed only the raw wrapper, hiding the camera error)."""
+    import re
+    text = raw.decode("utf-8", "replace").strip()
+    if not text.startswith("#< CLIXML"):
+        return text
+    parts = re.findall(r'<S S="Error">(.*?)</S>', text, re.S)
+    if not parts:
+        parts = re.findall(r'<S[^>]*>(.*?)</S>', text, re.S)
+    out = "".join(parts)
+    out = (out.replace("&#", "?").replace("&lt;", "<").replace("&gt;", ">")
+              .replace("&quot;", '"').replace("&amp;", "&"))
+    out = re.sub(r"\s*_x000D__x000A_\s*|_x000D__x000A_", " ", out)
+    return " ".join(out.split())[:400] or text[:400]
 
 
 def _write_status(folder: str, status: Dict[str, Any]) -> None:
@@ -151,7 +196,7 @@ def live_frames(folder: str, seconds: float = 25.0, fps: float = 1.5,
             launch_log.append((cmd[-2], "exception", str(exc)))
             status["error"] = "%s: %s" % (type(exc).__name__, exc)
             break
-        err = proc.stderr.decode("utf-8", "replace").strip()
+        err = _decode_ps_stderr(proc.stderr)
         out = proc.stdout.decode("utf-8", "replace").strip()
         launch_log.append((cmd[-2], "rc=%d" % proc.returncode, (err or out)[:300]))
         if proc.returncode not in (0, 2) and err:

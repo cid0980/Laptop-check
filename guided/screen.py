@@ -677,6 +677,24 @@ def run_touch_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
     draw()
     top.focus_force()
 
+    def _front_guard() -> None:
+        """Keep this window above the full-screen main window: on some
+        machines a borderless topmost Toplevel created while another
+        full-screen topmost window is active ends up BEHIND it, and the
+        tester only sees the 'Running...' splash (v1.5.3 shop bug)."""
+        if state["done"]:
+            return
+        try:
+            top.lift()
+            top.attributes("-topmost", True)
+            top.focus_force()
+            top.after(1200, _front_guard)
+        except Exception:
+            pass
+
+    top.update_idletasks()
+    _front_guard()
+
     def timeout() -> None:
         if not state["done"]:
             _finish(False)

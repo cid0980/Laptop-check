@@ -1,3 +1,19 @@
+## v1.5.4 - dialogs you can actually finish, touch window on top, camera retries
+- GUIDED DIALOG LAYOUT (shop bug): the mark/finish button row was packed after
+  the expanding body, so on tall dialogs (ports, mic, cosmetic) it was pushed
+  off-screen - techs could not press FINISH and had to close the window (which
+  recorded 'cancelled'). Mark row is now pinned to the bottom FIRST and the
+  body scrolls when content is taller than the screen.
+- TOUCH TEST (shop bug): the borderless test window could end up BEHIND the
+  full-screen main window, leaving the tester staring at the 'Running: Touch
+  screen' splash until timeout (recorded as dead digitiser). A 1.2 s guard now
+  keeps the touch window lifted, topmost and focused until it finishes.
+- CAMERA: capture child writes status.json immediately at start (with a
+  WriteAllText fallback), starts a preview stream first (some drivers only
+  deliver frames while preview runs), retries with PhotoCaptureSource=Photo,
+  and PowerShell CLIXML stderr is decoded so real exception text reaches the
+  report/launch.log instead of 'no frames and no error text'.
+- Mic: duplicate loopback-proof note removed.
 ## v1.5.3 - less manual work, real-machine fixes from the second shop bundle
 - CRASH FIX: mic panel died with "'GuidedDialog' object has no attribute 'status'"
   (status label was created after panels build; dlg.say() inside build crashed).

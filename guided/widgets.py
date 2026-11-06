@@ -111,34 +111,10 @@ class GuidedDialog:
             tk.Label(head, text=subtitle, bg=COLOURS["panel2"], fg=COLOURS["accent"],
                      font=("Segoe UI", 10, "bold"), anchor="w").pack(fill="x", padx=18)
 
-        body = tk.Frame(host, bg=COLOURS["bg"])
-        body.pack(fill="both", expand=True, padx=18, pady=12)
-
-        if instructions:
-            box = tk.Frame(body, bg=COLOURS["panel"], highlightthickness=1,
-                           highlightbackground=COLOURS["line"])
-            box.pack(fill="x", pady=(0, 10))
-            for i, line in enumerate(instructions):
-                tk.Label(box, text=("%d.  " % (i + 1)) + line, bg=COLOURS["panel"],
-                         fg=COLOURS["text"] if not line.startswith("!") else "#ffd479",
-                         font=("Segoe UI", 10), anchor="w", justify="left",
-                         wraplength=w - 80).pack(fill="x", padx=12, pady=3)
-
-        self.action_frame = tk.Frame(body, bg=COLOURS["bg"])
-        self.action_frame.pack(fill="x", pady=(0, 10))
-        # status label MUST exist before body_builder runs: panels call
-        # dlg.say() while they build (v1.5.2 crash: 'no attribute status').
-        self.status = tk.Label(body, text="", bg=COLOURS["bg"], fg=COLOURS["muted"],
-                               font=("Segoe UI", 10), anchor="w", justify="left", wraplength=w - 80)
-        self.status.pack(fill="x", pady=(4, 4))
-        if body_builder:
-            try:
-                body_builder(self, body)
-            except Exception as exc:
-                tk.Label(body, text="Panel error: %s" % exc, bg=COLOURS["bg"],
-                         fg="#ff9d9d", font=("Segoe UI", 9)).pack(fill="x")
-
-        # ---- mark row ----------------------------------------------------
+        # ---- mark row FIRST (pack order = layout order in Tk): the finish
+        # buttons must own the bottom strip before the expanding body takes
+        # the rest.  Packing them after body squeezed them off-screen and
+        # shops could not finish the ports / mic / cosmetic dialogs.
         markrow = tk.Frame(host, bg=COLOURS["panel"])
         markrow.pack(fill="x", side="bottom")
         inner = tk.Frame(markrow, bg=COLOURS["panel"])
@@ -163,6 +139,63 @@ class GuidedDialog:
                           command=lambda k=key: self._choose(k))
             b.pack(side="left", padx=3)
             self.mark_buttons[key] = b
+
+        # ---- scrollable body: tall content must never hide the mark row
+        outer = tk.Frame(host, bg=COLOURS["bg"])
+        outer.pack(fill="both", expand=True, padx=18, pady=12)
+        self._canvas = tk.Canvas(outer, bg=COLOURS["bg"], highlightthickness=0)
+        sb = tk.Scrollbar(outer, orient="vertical", command=self._canvas.yview)
+        self._canvas.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        self._canvas.pack(side="left", fill="both", expand=True)
+        body = tk.Frame(self._canvas, bg=COLOURS["bg"])
+        self._win = self._canvas.create_window((0, 0), window=body, anchor="nw")
+
+        def _on_body_cfg(event: Any) -> None:
+            try:
+                self._canvas.configure(scrollregion=self._canvas.bbox("all"))
+            except Exception:
+                pass
+
+        def _on_canvas_cfg(event: Any) -> None:
+            try:
+                self._canvas.itemconfigure(self._win, width=event.width)
+            except Exception:
+                pass
+
+        def _on_wheel(event: Any) -> None:
+            try:
+                self._canvas.yview_scroll(int(-1 * (event.delta / 120)) or -1, "units")
+            except Exception:
+                pass
+
+        body.bind("<Configure>", _on_body_cfg)
+        self._canvas.bind("<Configure>", _on_canvas_cfg)
+        self._canvas.bind_all("<MouseWheel>", _on_wheel)
+
+        if instructions:
+            box = tk.Frame(body, bg=COLOURS["panel"], highlightthickness=1,
+                           highlightbackground=COLOURS["line"])
+            box.pack(fill="x", pady=(0, 10))
+            for i, line in enumerate(instructions):
+                tk.Label(box, text=("%d.  " % (i + 1)) + line, bg=COLOURS["panel"],
+                         fg=COLOURS["text"] if not line.startswith("!") else "#ffd479",
+                         font=("Segoe UI", 10), anchor="w", justify="left",
+                         wraplength=w - 80).pack(fill="x", padx=12, pady=3)
+
+        self.action_frame = tk.Frame(body, bg=COLOURS["bg"])
+        self.action_frame.pack(fill="x", pady=(0, 10))
+        # status label MUST exist before body_builder runs: panels call
+        # dlg.say() while they build (v1.5.2 crash: 'no attribute status').
+        self.status = tk.Label(body, text="", bg=COLOURS["bg"], fg=COLOURS["muted"],
+                               font=("Segoe UI", 10), anchor="w", justify="left", wraplength=w - 80)
+        self.status.pack(fill="x", pady=(4, 4))
+        if body_builder:
+            try:
+                body_builder(self, body)
+            except Exception as exc:
+                tk.Label(body, text="Panel error: %s" % exc, bg=COLOURS["bg"],
+                         fg="#ff9d9d", font=("Segoe UI", 9)).pack(fill="x")
 
         self.top.bind("<Key>", self._on_key)
         self.top.protocol("WM_DELETE_WINDOW", self._cancel)

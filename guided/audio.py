@@ -744,7 +744,8 @@ def run_mic_test(master: tk.Misc, res: CheckResult, ctx: Dict[str, Any],
                 d_db = max(b["peak_db"] for b in during)
                 res.metric("Speaker-to-mic loopback",
                            "%+.1f dB over baseline (%.1f -> %.1f dB)" % (d_db - b_db, b_db, d_db))
-                if d_db - b_db > 6:
+                if d_db - b_db > 6 and not state.get("lb_noted"):
+                    state["lb_noted"] = True
                     state["lb_proof"] = d_db - b_db
                     res.note("Loopback proof: the microphone clearly heard the speaker tone - "
                              "speakers AND microphone both work.")
