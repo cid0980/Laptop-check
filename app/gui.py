@@ -1008,7 +1008,25 @@ class Wizard:
             for f in res.flags:
                 t = f[0] if isinstance(f, (list, tuple)) else str(f)
                 lines.append("      ! %s" % t)
-        txt.insert("1.0", "\n".join(lines))
+        txt.tag_configure("good", foreground=C["good"])
+        txt.tag_configure("okay", foreground=C["warn"])
+        txt.tag_configure("bad", foreground=C["bad"])
+        txt.tag_configure("mut", foreground=C["muted"])
+        txt.tag_configure("ink", foreground=C["text"])
+        for i, ln in enumerate(lines):
+            if ln.lstrip().startswith("! "):
+                tag = "okay"
+            elif "NEEDS ATTENTION" in ln:
+                tag = "okay"
+            elif "FAILED" in ln or "FAIL " in ln:
+                tag = "bad"
+            elif "GOOD" in ln:
+                tag = "good"
+            elif "NOT TESTED" in ln or "SKIPPED" in ln:
+                tag = "mut"
+            else:
+                tag = "ink"
+            txt.insert("end", ln + ("\n" if i + 1 < len(lines) else ""), tag)
         txt.configure(state="disabled")
 
     # ============================================================== dialogs
@@ -1122,7 +1140,7 @@ class Wizard:
 
         def gcol(g: str) -> str:
             g = (g or "?")[:1]
-            return C["good"] if g in "AB" else C["okay"] if g == "C" else C["bad"]
+            return C["good"] if g in "AB" else C["warn"] if g == "C" else C["bad"]
 
         for item in list_history():
             rowf = tk.Frame(inner, bg=C["card"], highlightthickness=1,
