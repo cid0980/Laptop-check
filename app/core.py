@@ -32,7 +32,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 APP_NAME = "Laptop Check Pro"
-APP_VERSION = "1.5.1"
+APP_VERSION = "1.5.2"
 IS_WINDOWS = sys.platform.startswith("win")
 IS_FROZEN = getattr(sys, "frozen", False)
 

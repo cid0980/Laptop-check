@@ -6,6 +6,20 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 The running version lives in `app/core.py` (`APP_VERSION`) and is stamped on
 every report; released executables are named after these versions.
 
+## [1.5.2] - keyboard input, for real this time
+- v1.5.1's window-capture fallback initialised its state on the wrong class,
+  so the fallback crashed silently and keys still were not counted. Fixed
+  and proven with a synthetic-event test (5/76 counted).
+- The test window now re-asserts keyboard focus every 1.5 s (borderless
+  topmost windows are not always given focus by Windows).
+- Key events are also accepted from the application root window.
+- Tier-4 fallback: when Raw Input, the low-level hook AND window events are
+  all deaf for 6 s, keys are counted system-wide via GetAsyncKeyState while
+  the test is on screen, with a plain-English banner and a result note that
+  external-keyboard detection is unavailable in that mode.
+- The keyboard UI loop can no longer die silently: every tick is guarded and
+  errors are logged to the technician drawer.
+
 ## [1.5.1] - shop-PC bundle bug-hunt
 ### Fixed (found in a real inspection bundle from the shop PC)
 - CPU stress crashed on Windows (3-tuple unpacked into 2) and was skipped.

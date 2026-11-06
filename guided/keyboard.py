@@ -283,8 +283,6 @@ class KeyboardWatcher:
         self.injected_seen = 0
         self.hook_keys = 0          # key-downs seen by the low-level hook
         self.hook_mode = False      # counting from the hook because Raw Input never arrives
-        self._win_keys: Dict[int, float] = {}
-        self._win_mode = False
         self._hook_handle = 0
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
@@ -555,6 +553,10 @@ class KeyboardTest:
         self.started = time.time()
         self.top: Optional[tk.Toplevel] = None
         self.confirm_var = tk.BooleanVar(value=False)
+        self._win_keys: Dict[int, float] = {}
+        self._win_mode = False
+        self._poll_mode = False
+        self._t_start = time.time()
 
     # -------------------------------------------------------------------- run
     def run(self) -> CheckResult:
@@ -615,8 +617,10 @@ class KeyboardTest:
         self.warn.pack(fill="x", pady=(0, 8))
         try:
             self.top.bind("<KeyPress>", self._on_win_key)
+            self.master.bind("<KeyPress>", self._on_win_key, add="+")
         except Exception:
             pass
+        self._force_focus()
 
         # ---- key grid ------------------------------------------------------
         grid = tk.Frame(body, bg=COLOURS["bg"])
@@ -741,6 +745,48 @@ class KeyboardTest:
                           "This exception is recorded." % handle, "warn")
 
     # ------------------------------------------------------------------ loop
+    def _force_focus(self) -> None:
+        """Borderless topmost windows are not always given keyboard focus by
+        Windows; without focus no key event ever reaches Tk. Re-assert it."""
+        def guard() -> None:
+            try:
+                if self.top is None or not self.top.winfo_exists():
+                    return
+                self.top.lift()
+                try:
+                    foc = self.top.focus_get()
+                except Exception:
+                    foc = None
+                if foc is None or str(foc) not in (str(self.top,),) and not (
+                        foc is not None and str(foc).startswith(str(self.top))):
+                    self.top.focus_force()
+                self.top.after(1500, guard)
+            except Exception:
+                pass
+        try:
+            self.top.after(300, guard)
+        except Exception:
+            pass
+
+    def _poll_keys(self) -> None:
+        """Tier-4: OS-level key poll (GetAsyncKeyState 'pressed since last
+        call' bit). Focus-independent, device-attribution unavailable - used
+        only when every per-device path on this Windows is deaf."""
+        if not self._poll_mode or self.top is None or not self.top.winfo_exists():
+            return
+        try:
+            user32 = ctypes.windll.user32
+            user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
+            user32.GetAsyncKeyState.restype = ctypes.c_short
+            for vk, _label, _row, _req in KEYMAP:
+                if vk in self._win_keys:
+                    continue
+                if user32.GetAsyncKeyState(vk) & 0x0001:
+                    self._win_keys[vk] = time.time()
+            self.top.after(35, self._poll_keys)
+        except Exception:
+            pass
+
     def _on_win_key(self, e: Any) -> None:
         """Tier-3 capture: Tk's own key events on this full-screen window.
 
@@ -764,20 +810,48 @@ class KeyboardTest:
         return pressed
 
     def _maybe_enable_window_mode(self) -> None:
-        if self._win_mode or len(self._win_keys) < 3:
-            return
         if self.watcher.events or self.watcher.hook_keys:
             return
-        self._win_mode = True
-        self.warn.configure(bg="#33290a",
-                            text="THIS WINDOWS DELIVERS NO KEYBOARD EVENTS TO THE TOOL'S "
-                                 "LISTENERS - keys are now counted from this full-screen test "
-                                 "window itself (only the keyboard in front of this screen can "
-                                 "type into it).")
-        if self.emit:
-            self.emit("Keyboard: raw+hook deaf - window capture mode enabled")
+        if not self._win_mode and len(self._win_keys) >= 3:
+            self._win_mode = True
+        elif (not self._win_mode and IS_WINDOWS and len(self._win_keys) < 3
+              and time.time() - self._t_start > 6):
+            # tier 4: nothing per-device works on this Windows - poll the OS
+            self._win_mode = True
+            self._poll_mode = True
+            self._poll_keys()
+        else:
+            return
+        if self._poll_mode:
+            self.warn.configure(bg="#33290a",
+                                text="THIS WINDOWS BLOCKS EVERY PER-DEVICE KEYBOARD PATH - "
+                                     "keys are now counted system-wide while this test is on "
+                                     "screen (external-keyboard detection is unavailable in "
+                                     "this mode).")
+            if self.emit:
+                self.emit("Keyboard: raw+hook+window deaf - system-wide poll enabled")
+        else:
+            self.warn.configure(bg="#33290a",
+                                text="THIS WINDOWS DELIVERS NO KEYBOARD EVENTS TO THE TOOL'S "
+                                     "LISTENERS - keys are now counted from this full-screen "
+                                     "test window itself (only the keyboard in front of this "
+                                     "screen can type into it).")
+            if self.emit:
+                self.emit("Keyboard: raw+hook deaf - window capture mode enabled")
 
     def _tick(self) -> None:
+        try:
+            self._tick_body()
+        except Exception as exc:
+            if self.emit:
+                self.emit("Keyboard UI tick error: %s: %s" % (type(exc).__name__, exc))
+        try:
+            if self.top is not None and self.top.winfo_exists():
+                self.master.after(120, self._tick)
+        except Exception:
+            pass
+
+    def _tick_body(self) -> None:
         if self.top is None or not self.top.winfo_exists():
             return
         if (not self.watcher.hook_mode and not self.watcher.events
@@ -821,7 +895,6 @@ class KeyboardTest:
                     self.emit("Keyboard violation: '%s' from %s" % (v["label"], v["device"][:50]))
         self.prog_label.configure(text="Required keys pressed: %d / %d" % (done, total_req))
         self.vio_label.configure(text=("VIOLATIONS: %d" % len(vios)) if vios else "No violations")
-        self.master.after(120, self._tick)
 
     def _paint(self, vk: int, bg: str, fg: str) -> None:
         lab = self.labels.get(vk)
@@ -858,6 +931,7 @@ class KeyboardTest:
         pressed = self._merged_pressed(self.watcher.pressed())
         src = ("raw-input + low-level hook" if self.watcher.events and self.watcher.hook_ok
                else "low-level hook" if self.watcher.events or self.watcher.hook_keys
+               else "system-wide poll (last-resort fallback)" if self._poll_mode
                else "window capture (fallback)" if self._win_mode
                else "none - no key events reached the tool")
         res.metric("Capture source", src)
