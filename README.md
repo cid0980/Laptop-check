@@ -206,3 +206,12 @@ docs/                   screenshots
 ## Licence
 
 MIT — see [LICENSE](LICENSE). Use it in your shop, free forever.
+
+## If Windows refuses to run the exe
+
+* **SmartScreen** ("Windows protected your PC", unknown publisher): normal for
+  unsigned tools - click *More info -> Run anyway* once per PC.
+* **Smart App Control** ("blocked an app that may be unsafe", no run-anyway):
+  run `tools/allow_laptopcheckpro.bat` once as administrator and restart, or
+  sign the exe (see `docs/signing.md` - the CI signs automatically once a
+  certificate secret is configured).

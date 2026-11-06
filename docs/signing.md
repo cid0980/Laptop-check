@@ -28,3 +28,27 @@ Three things already make the file look and behave like real software:
    UAC and SmartScreen dialogs ("Verified publisher").
 
 Nothing else changes: same one file, same repo, same release ritual.
+
+## If Windows shows "Smart App Control blocked an app" (no "Run anyway")
+
+Smart App Control (Windows 11) is stricter than SmartScreen: an unsigned,
+unknown-reputation exe is **hard-blocked**, with no bypass button and no
+per-app allow list. Two ways out:
+
+### A. Sign the exe (the real fix, recommended)
+A signature from any CA in the Microsoft Trusted Root Program makes SAC let
+the app run - reputation no longer matters, and trust sticks to the
+certificate, so every future build passes too.
+* Azure Artifact Signing (formerly Trusted Signing), ~US$10/month, works from
+  GitHub Actions; or an OV code-signing certificate (.pfx) as above.
+* Self-signed certificates do NOT help - SAC requires a trusted CA chain.
+* The workflow in this repo already signs automatically once
+  `SIGN_PFX_BASE64` / `SIGN_PFX_PASS` secrets exist.
+
+### B. One-time unblock on the shop PC (no certificate needed)
+Run `tools/allow_laptopcheckpro.bat` once **as administrator** and restart the
+PC. It switches Smart App Control to *evaluation mode* on that machine only:
+SAC keeps logging but blocks nothing. The registry value it sets is
+`HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy\VerifiedAndReputablePolicyState`
+(2 = evaluation, 0 = off, 1 = enforcing). The bat file is also attached to
+every Release next to the exe.
